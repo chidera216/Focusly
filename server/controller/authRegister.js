@@ -31,12 +31,14 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
     });
 
-    try {
-      console.log("Verification email sent successfully");
-    } catch (error) {
-      console.error("Verification email error:", error);
-      throw error;
-    }
+    const token = generateToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
 
     res.status(201).json({
       message:

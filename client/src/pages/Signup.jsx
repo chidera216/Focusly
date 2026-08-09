@@ -14,7 +14,6 @@ const SignupPage = () => {
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPasswordError, setShowPasswordError] = useState(false);
@@ -40,11 +39,14 @@ const SignupPage = () => {
 
     try {
       setLoading(true);
+
       const response = await api.post("/auth/register", form);
+
       console.log(response.data);
 
-      setSuccessMessage(response.data.message);
-      setError("");
+      // JWT cookie is created by the backend,
+      // so take the user straight to the dashboard.
+      navigate("/dashboard");
 
       setForm({
         name: "",
@@ -53,11 +55,9 @@ const SignupPage = () => {
       });
     } catch (err) {
       console.log(err.response);
-      console.log(err.response.data);
+      console.log(err.response?.data);
 
       setError(err.response?.data?.message || "Something went wrong");
-      setSuccessMessage("");
-      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -139,25 +139,6 @@ const SignupPage = () => {
           <p style={{ color: "red" }} className="text-[12px]">
             {error}
           </p>
-        )}
-        {successMessage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-            <div className="w-full max-w-md rounded-3xl bg-[#16161c] p-8 text-center shadow-2xl">
-              <h2 className="mb-3 text-xl font-bold text-white">
-                Check your email
-              </h2>
-
-              <p className="mb-6 text-sm text-[#a0a0aa]">{successMessage}</p>
-
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="w-full rounded-full bg-white py-2 font-medium text-black"
-              >
-                Okay
-              </button>
-            </div>
-          </div>
         )}
         {showPasswordError && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
