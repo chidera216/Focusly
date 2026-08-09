@@ -56,11 +56,11 @@ const App = () => {
   };
 
   const handleDismissInstall = () => {
-    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    const oneday = 24 * 24 * 60 * 60 * 1000;
 
     localStorage.setItem(
       "focuslyInstallDismissedUntil",
-      String(Date.now() + oneWeek),
+      String(Date.now() + oneday),
     );
 
     setInstallPrompt(null);
