@@ -37,7 +37,13 @@ export const registerUser = async (req, res) => {
       emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    await sendVerificationEmail(email, verificationToken);
+    try {
+      await sendVerificationEmail(email, verificationToken);
+      console.log("Verification email sent successfully");
+    } catch (error) {
+      console.error("Verification email error:", error);
+      throw error;
+    }
 
     res.status(201).json({
       message:
