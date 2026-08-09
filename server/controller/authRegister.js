@@ -41,8 +41,7 @@ export const registerUser = async (req, res) => {
     });
 
     res.status(201).json({
-      message:
-        "Account created. Please check your email to verify your account.",
+      message: "Account created",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
