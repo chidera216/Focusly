@@ -19,7 +19,6 @@ const LoginPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -54,7 +53,6 @@ const LoginPage = () => {
       const message = err.response?.data?.message;
 
       if (message === "Please verify your email before logging in") {
-        setShowVerifyModal(true);
         setError("");
       } else {
         setError(message || "Something went wrong");
@@ -163,27 +161,6 @@ const LoginPage = () => {
                     { replace: true },
                   );
                 }}
-                className="w-full rounded-full bg-white py-2 font-medium text-black"
-              >
-                Okay
-              </button>
-            </div>
-          </div>
-        )}
-        {showVerifyModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-            <div className="w-full max-w-md rounded-3xl bg-[#16161c] p-8 text-center shadow-2xl">
-              <h2 className="mb-3 text-xl font-bold text-white">
-                Email Verification Required
-              </h2>
-
-              <p className="mb-6 text-sm text-[#a0a0aa]">
-                Please verify your email before logging in.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => setShowVerifyModal(false)}
                 className="w-full rounded-full bg-white py-2 font-medium text-black"
               >
                 Okay

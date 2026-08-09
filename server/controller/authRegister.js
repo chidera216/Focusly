@@ -1,8 +1,6 @@
 import User from "../model/User.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/generateToken.js";
-import crypto from "crypto";
-import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -26,19 +24,14 @@ export const registerUser = async (req, res) => {
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-
     // create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
     try {
-      await sendVerificationEmail(email, verificationToken);
       console.log("Verification email sent successfully");
     } catch (error) {
       console.error("Verification email error:", error);
@@ -54,41 +47,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-export const verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).json({
-        message: "Verification token is required",
-      });
-    }
-
-    const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid or expired verification token",
-      });
-    }
-
-    user.emailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-
-    await user.save();
-
-    res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -98,12 +56,6 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         message: "Account not found",
-      });
-    }
-
-    if (!user.emailVerified) {
-      return res.status(403).json({
-        message: "Please verify your email before logging in",
       });
     }
 
