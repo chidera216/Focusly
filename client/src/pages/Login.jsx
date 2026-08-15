@@ -88,9 +88,13 @@ const LoginPage = () => {
           {/* Brand */}
           <div className="relative z-10 px-10 pt-10 xl:px-16">
             <div className="flex items-center gap-3">
-              {/* <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black">
-                <span className="text-sm font-bold">F</span>
-              </div> */}
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl">
+                <img
+                  src="icons.svg"
+                  alt="Focusly"
+                  className="h-full w-full object-contain p-1.5"
+                />
+              </div>
 
               <span className="font-['Plus_Jakarta_Sans'] text-lg font-semibold tracking-tight">
                 Focusly

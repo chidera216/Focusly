@@ -45,9 +45,13 @@ const Sidebar = () => {
       {/* Brand */}
       <div className="px-7 py-7">
         <NavLink to="/dashboard" className="flex items-center gap-3">
-          {/* <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black">
-            <span className="text-sm font-bold">F</span>
-          </div> */}
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl">
+            <img
+              src="icons.svg"
+              alt="Focusly"
+              className="h-full w-full object-contain p-1.5"
+            />
+          </div>
 
           <div>
             <p className="font-['Plus_Jakarta_Sans'] text-[15px] font-semibold tracking-tight text-white">
