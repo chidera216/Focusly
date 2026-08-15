@@ -2,70 +2,96 @@ import { LayoutDashboard, ListTodo, ChartColumn, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const BottomNav = () => {
+  const links = [
+    {
+      name: "Home",
+      path: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Tasks",
+      path: "/tasks",
+      icon: ListTodo,
+    },
+    {
+      name: "Stats",
+      path: "/stats",
+      icon: ChartColumn,
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: User,
+    },
+  ];
+
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:hidden z-50">
-      <div className="relative bg-[#111118]/95 backdrop-blur-xl border border-white/5 rounded-[32px] h-20 flex items-center justify-between px-6">
-        {/* Dashboard */}
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `flex flex-col items-center transition ${
-              isActive ? "text-white" : "text-gray-500"
-            }`
-          }
-        >
-          <LayoutDashboard size={20} />
-          <span className="text-xs mt-1">Home</span>
-        </NavLink>
+    <nav className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-97.5 -translate-x-1/2 md:hidden">
+      <div
+        className="
+          relative
+          flex
+          h-18
+          items-center
+          justify-around
+          rounded-3xl
+          border
+          border-white/8
+          bg-[#0F0F12]/95
+          px-2
+          shadow-[0_18px_60px_rgba(0,0,0,0.5)]
+          backdrop-blur-2xl
+        "
+      >
+        {links.map((link) => {
+          const Icon = link.icon;
 
-        {/* Tasks */}
-        <NavLink
-          to="/tasks"
-          className={({ isActive }) =>
-            `flex flex-col items-center transition ${
-              isActive ? "text-white" : "text-gray-500"
-            }`
-          }
-        >
-          <ListTodo size={20} />
-          <span className="text-xs mt-1">Tasks</span>
-        </NavLink>
+          return (
+            <NavLink
+              key={link.path}
+              to={link.path}
+              className="relative flex h-full min-w-17 items-center justify-center"
+            >
+              {({ isActive }) => (
+                <div
+                  className={`
+                    relative
+                    flex
+                    h-13
+                    min-w-14.5
+                    flex-col
+                    items-center
+                    justify-center
+                    rounded-[17px]
+                    transition-all
+                    duration-200
+                    ${
+                      isActive
+                        ? "bg-white text-black"
+                        : "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"
+                    }
+                  `}
+                >
+                  <Icon size={19} strokeWidth={isActive ? 2.1 : 1.7} />
 
-        {/* Statistics */}
-        <NavLink
-          to="/stats"
-          className={({ isActive }) =>
-            `flex flex-col items-center transition ${
-              isActive ? "text-white" : "text-gray-500"
-            }`
-          }
-        >
-          <ChartColumn size={20} />
-          <span className="text-xs mt-1">Stats</span>
-        </NavLink>
-
-        {/* Profile */}
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            `relative flex flex-col items-center transition ${
-              isActive ? "text-white" : "text-gray-500"
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <User size={20} />
-              <span className="text-xs mt-1">Profile</span>
-
-              {isActive && (
-                <div className="absolute -bottom-3 w-8 h-1 rounded-full" />
+                  <span
+                    className={`
+                      mt-1
+                      text-[9px]
+                      font-medium
+                      tracking-wide
+                      ${isActive ? "text-black" : "text-zinc-700"}
+                    `}
+                  >
+                    {link.name}
+                  </span>
+                </div>
               )}
-            </>
-          )}
-        </NavLink>
+            </NavLink>
+          );
+        })}
       </div>
-    </div>
+    </nav>
   );
 };
 

@@ -3,25 +3,32 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+
     VitePWA({
       registerType: "autoUpdate",
+
+      devOptions: {
+        enabled: true,
+      },
+
       manifest: {
         name: "Focusly",
         short_name: "Focusly",
         description: "A simple productivity app for focused work sessions.",
-        theme_color: "#16161c",
-        background_color: "#16161c",
+        theme_color: "#0B0B0F",
+        background_color: "#0B0B0F",
         display: "standalone",
         start_url: "/",
+        scope: "/",
+
         icons: [
           {
             src: "/icons.svg",
-            sizes: "any",
+            sizes: "192x192",
             type: "image/svg+xml",
           },
         ],

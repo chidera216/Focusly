@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -9,24 +10,61 @@ import Profile from "./pages/Profile";
 
 const App = () => {
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  /*
+    ==========================================
+    PWA INSTALLATION
+    ==========================================
+  */
 
   useEffect(() => {
+    const checkInstalled = () => {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+
+      setIsInstalled(standalone);
+
+      /*
+        If the app is installed,
+        there is no reason to keep the
+        browser install prompt around.
+      */
+      if (standalone) {
+        setInstallPrompt(null);
+      }
+    };
+
+    checkInstalled();
+
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+
+    mediaQuery.addEventListener("change", checkInstalled);
+
+    /*
+      Browser fires this after the app
+      has successfully been installed.
+    */
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    /*
+      Browser fires this when the website
+      can be installed as a PWA.
+    */
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
 
-      const isInstalled = window.matchMedia(
-        "(display-mode: standalone)",
-      ).matches;
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
 
-      if (isInstalled) {
-        return;
-      }
-
-      const dismissedUntil = localStorage.getItem(
-        "focuslyInstallDismissedUntil",
-      );
-
-      if (dismissedUntil && Date.now() < Number(dismissedUntil)) {
+      if (standalone) {
         return;
       }
 
@@ -36,6 +74,10 @@ const App = () => {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
+      mediaQuery.removeEventListener("change", checkInstalled);
+
+      window.removeEventListener("appinstalled", handleAppInstalled);
+
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
@@ -43,76 +85,75 @@ const App = () => {
     };
   }, []);
 
+  /*
+    ==========================================
+    INSTALL APP
+    ==========================================
+  */
+
   const handleInstall = async () => {
-    if (!installPrompt) return;
+    if (installPrompt) {
+      try {
+        await installPrompt.prompt();
 
-    installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
 
-    const { outcome } = await installPrompt.userChoice;
+        if (outcome === "accepted") {
+          setInstallPrompt(null);
+        }
+      } catch (error) {
+        console.error("Installation error:", error);
+      }
 
-    if (outcome === "accepted") {
-      setInstallPrompt(null);
+      return;
     }
-  };
 
-  const handleDismissInstall = () => {
-    const oneday = 24 * 24 * 60 * 60 * 1000;
-
-    localStorage.setItem(
-      "focuslyInstallDismissedUntil",
-      String(Date.now() + oneday),
-    );
-
-    setInstallPrompt(null);
+    console.log("Native install prompt is not available.");
   };
 
   return (
-    <div className="text-white bg-[#0b0b0f] bg-linear-to-b from-[#161426] via-[#0b0b0f] via-20% to-[#0b0b0f]">
-      {" "}
+    <div className="min-h-screen bg-[#0B0B0F] text-white">
       <BrowserRouter>
-        {" "}
         <Routes>
-          <Route path="/signup" element={<SignupPage />} />
+          {/* Authentication */}
+
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+
+          <Route path="/signup" element={<SignupPage />} />
+
+          {/* Dashboard */}
+
+          <Route
+            path="/"
+            element={
+              <Dashboard
+                installPrompt={installPrompt}
+                isInstalled={isInstalled}
+                onInstall={handleInstall}
+              />
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <Dashboard
+                installPrompt={installPrompt}
+                isInstalled={isInstalled}
+                onInstall={handleInstall}
+              />
+            }
+          />
+
+          {/* Other pages */}
+
           <Route path="/tasks" element={<Tasks />} />
+
           <Route path="/stats" element={<Stats />} />
+
           <Route path="/profile" element={<Profile />} />
-          <Route path="/" element={<Dashboard />} />{" "}
-        </Routes>{" "}
+        </Routes>
       </BrowserRouter>
-      {installPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md rounded-3xl bg-[#16161c] p-8 text-center shadow-2xl">
-            <h2 className="mb-3 text-xl font-bold text-white">
-              Install Focusly
-            </h2>
-
-            <p className="mb-6 text-sm text-[#a0a0aa]">
-              Install Focusly on your device for a faster and more convenient
-              experience.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleDismissInstall}
-                className="w-full rounded-full border border-white/20 py-2 font-medium text-white"
-              >
-                Not now
-              </button>
-
-              <button
-                type="button"
-                onClick={handleInstall}
-                className="w-full rounded-full bg-white py-2 font-medium text-black"
-              >
-                Install
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
