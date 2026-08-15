@@ -276,7 +276,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
           MAIN
       ====================================== */}
 
-      <main className="min-h-screen w-full md:pl-60">
+      <main className="min-h-screen mb-12 w-full md:pl-60">
         {/* =====================================
             TOP BAR
         ====================================== */}
