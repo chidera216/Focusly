@@ -228,7 +228,7 @@ const Stats = () => {
           {/* RANGE */}
 
           <div
-            className={`mb-8 inline-flex max-w-full overflow-x-auto rounded-lg border p-1 ${panelClass}`}
+            className={`mb-8 inline-flex max-w-full rounded-lg border p-1 ${panelClass}`}
           >
             {ranges.map((item) => {
               const active = range === item.value;
@@ -238,7 +238,7 @@ const Stats = () => {
                   key={item.value}
                   type="button"
                   onClick={() => setRange(item.value)}
-                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-medium transition-colors ${
+                  className={`shrink-0 rounded-md px-2.5 py-2 text-[11px] font-medium transition-colors sm:px-4 sm:text-xs ${
                     active
                       ? isDark
                         ? "bg-white text-black"

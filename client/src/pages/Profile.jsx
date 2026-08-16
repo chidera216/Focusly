@@ -78,6 +78,8 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setLoading(true);
+
         const res = await api.get("/auth/me");
 
         const currentUser = res.data.user;
@@ -245,19 +247,21 @@ const Profile = () => {
                 </div>
               </div>
 
+              {/* EDIT PROFILE */}
+
               <button
                 type="button"
                 onClick={() => {
                   setName(user?.name || "");
                   setIsEditing(true);
                 }}
-                className={`inline-flex w-fit items-center gap-2 border px-4 py-2.5 text-xs font-medium transition-colors ${
+                className={`inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-medium shadow-sm transition-all duration-200 ${
                   isDark
-                    ? "border-[#303034] text-[#A1A1AA] hover:border-[#444448] hover:text-white"
-                    : "border-[#DCDCD7] bg-white text-[#555555] hover:border-[#C8C8C2] hover:text-black"
+                    ? "border-[#35353A] bg-[#1C1C20] text-zinc-200 hover:border-[#4A4A50] hover:bg-[#242428] hover:text-white"
+                    : "border-[#D8D8D3] bg-[#ECECEA] text-[#30302D] hover:border-[#C8C8C2] hover:bg-[#E3E3DF] hover:text-black"
                 }`}
               >
-                <Pencil size={14} />
+                <Pencil size={14} strokeWidth={1.8} />
                 Edit profile
               </button>
             </div>
@@ -349,16 +353,18 @@ const Profile = () => {
                 </p>
               </div>
 
+              {/* LOGOUT */}
+
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(true)}
-                className={`inline-flex w-fit items-center gap-2 border px-4 py-2.5 text-xs font-medium transition-colors ${
+                className={`inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-medium transition-all duration-200 ${
                   isDark
-                    ? "border-[#4A292D] text-[#D77A7A] hover:bg-[#28171A]"
-                    : "border-[#E4CACA] bg-white text-[#B24B4B] hover:bg-[#FFF4F4]"
+                    ? "border-[#4A292D] bg-[#211619] text-[#E58A8A] hover:border-[#69383D] hover:bg-[#2A1A1D] hover:text-[#F0A0A0]"
+                    : "border-[#E4CACA] bg-[#FFF4F4] text-[#B24B4B] hover:border-[#DDB8B8] hover:bg-[#FFEAEA] hover:text-[#963C3C]"
                 }`}
               >
-                <LogOut size={14} />
+                <LogOut size={14} strokeWidth={1.8} />
                 Log out
               </button>
             </div>
@@ -379,12 +385,14 @@ const Profile = () => {
           }`}
         >
           <div
-            className={`w-full max-w-md border ${
+            className={`w-full max-w-md rounded-2xl border shadow-2xl ${
               isDark
                 ? "border-[#29292D] bg-[#141416]"
                 : "border-[#DDDDD8] bg-white"
             }`}
           >
+            {/* MODAL HEADER */}
+
             <div
               className={`flex items-center justify-between border-b px-6 py-5 ${border}`}
             >
@@ -407,15 +415,17 @@ const Profile = () => {
                   setIsEditing(false);
                 }}
                 disabled={saving}
-                className={`flex h-8 w-8 items-center justify-center transition-colors ${
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                   isDark
-                    ? "text-zinc-600 hover:text-white"
-                    : "text-zinc-400 hover:text-black"
+                    ? "text-zinc-600 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-400 hover:bg-black/5 hover:text-black"
                 }`}
               >
                 <X size={17} />
               </button>
             </div>
+
+            {/* MODAL BODY */}
 
             <div className="p-6">
               <label className={`mb-2 block text-xs ${secondary}`}>
@@ -428,14 +438,18 @@ const Profile = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
                 autoFocus
-                className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
+                className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all ${
                   isDark
-                    ? "border-[#303034] bg-[#0D0D0F] text-white placeholder:text-[#55555B] focus:border-[#55555B]"
-                    : "border-[#DCDCD7] bg-[#FAFAF8] text-[#171717] placeholder:text-[#AAAAA5] focus:border-[#999994]"
+                    ? "border-[#303034] bg-[#0D0D0F] text-white placeholder:text-[#55555B] focus:border-[#55555B] focus:ring-1 focus:ring-[#55555B]"
+                    : "border-[#DCDCD7] bg-[#FAFAF8] text-[#171717] placeholder:text-[#AAAAA5] focus:border-[#999994] focus:ring-1 focus:ring-[#999994]"
                 }`}
               />
 
+              {/* ACTIONS */}
+
               <div className="mt-6 flex justify-end gap-3">
+                {/* CANCEL */}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -443,23 +457,25 @@ const Profile = () => {
                     setIsEditing(false);
                   }}
                   disabled={saving}
-                  className={`px-4 py-2.5 text-xs font-medium ${
+                  className={`rounded-xl border px-4 py-2.5 text-xs font-medium transition-all duration-200 ${
                     isDark
-                      ? "text-zinc-500 hover:text-white"
-                      : "text-zinc-500 hover:text-black"
+                      ? "border-[#29292D] bg-[#18181B] text-zinc-400 hover:border-[#3A3A3F] hover:bg-[#202024] hover:text-zinc-200"
+                      : "border-[#DDDDD8] bg-[#F5F5F2] text-[#666660] hover:border-[#CECEC8] hover:bg-[#ECECE9] hover:text-[#222]"
                   }`}
                 >
                   Cancel
                 </button>
 
+                {/* SAVE */}
+
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving || !name.trim()}
-                  className={`px-5 py-2.5 text-xs font-medium disabled:opacity-50 ${
+                  className={`rounded-xl px-5 py-2.5 text-xs font-medium shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
                     isDark
-                      ? "bg-white text-black hover:bg-zinc-200"
-                      : "bg-[#171717] text-white hover:bg-black"
+                      ? "bg-[#E7E7E4] text-[#111113] hover:bg-white"
+                      : "bg-[#252522] text-white hover:bg-[#11110F]"
                   }`}
                 >
                   {saving ? "Saving..." : "Save changes"}
@@ -481,12 +497,14 @@ const Profile = () => {
           }`}
         >
           <div
-            className={`w-full max-w-md border ${
+            className={`w-full max-w-md rounded-2xl border shadow-2xl ${
               isDark
                 ? "border-[#29292D] bg-[#141416]"
                 : "border-[#DDDDD8] bg-white"
             }`}
           >
+            {/* MODAL HEADER */}
+
             <div
               className={`flex items-center justify-between border-b px-6 py-5 ${border}`}
             >
@@ -506,15 +524,17 @@ const Profile = () => {
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
                 disabled={loggingOut}
-                className={`flex h-8 w-8 items-center justify-center ${
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                   isDark
-                    ? "text-zinc-600 hover:text-white"
-                    : "text-zinc-400 hover:text-black"
+                    ? "text-zinc-600 hover:bg-white/5 hover:text-white"
+                    : "text-zinc-400 hover:bg-black/5 hover:text-black"
                 }`}
               >
                 <X size={17} />
               </button>
             </div>
+
+            {/* MODAL BODY */}
 
             <div className="p-6">
               <p className={`text-sm leading-relaxed ${secondary}`}>
@@ -522,24 +542,28 @@ const Profile = () => {
               </p>
 
               <div className="mt-7 flex justify-end gap-3">
+                {/* CANCEL */}
+
                 <button
                   type="button"
                   onClick={() => setShowLogoutModal(false)}
                   disabled={loggingOut}
-                  className={`px-4 py-2.5 text-xs font-medium ${
+                  className={`rounded-xl border px-4 py-2.5 text-xs font-medium transition-all duration-200 ${
                     isDark
-                      ? "text-zinc-500 hover:text-white"
-                      : "text-zinc-500 hover:text-black"
+                      ? "border-[#29292D] bg-[#18181B] text-zinc-400 hover:border-[#3A3A3F] hover:bg-[#202024] hover:text-zinc-200"
+                      : "border-[#DDDDD8] bg-[#F5F5F2] text-[#666660] hover:border-[#CECEC8] hover:bg-[#ECECE9] hover:text-[#222]"
                   }`}
                 >
                   Cancel
                 </button>
 
+                {/* CONFIRM LOGOUT */}
+
                 <button
                   type="button"
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="bg-[#B94A4A] px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#A83F3F] disabled:opacity-50"
+                  className="rounded-xl bg-[#B94A4A] px-5 py-2.5 text-xs font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#A83F3F] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loggingOut ? "Logging out..." : "Log out"}
                 </button>
