@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import api from "../service/api";
@@ -8,11 +8,17 @@ const Stats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [theme] = useState(() => {
+    return localStorage.getItem("theme") || "dark";
+  });
+
+  const isDark = theme === "dark";
+
   const ranges = [
     { label: "Today", value: "today" },
-    { label: "Week", value: "week" },
-    { label: "Month", value: "month" },
-    { label: "Year", value: "year" },
+    { label: "This week", value: "week" },
+    { label: "This month", value: "month" },
+    { label: "This year", value: "year" },
   ];
 
   useEffect(() => {
@@ -33,193 +39,567 @@ const Stats = () => {
     fetchStats();
   }, [range]);
 
-  /*
-    Convert minutes into a readable decimal value.
-
-    Examples:
-
-    10 minutes  → 10.00 min
-    45 minutes  → 45.00 min
-    60 minutes  → 1.00 hrs
-    90 minutes  → 1.50 hrs
-    125 minutes → 2.08 hrs
-  */
   const formatTime = (minutes) => {
     const numericMinutes = Number(minutes) || 0;
 
     if (numericMinutes < 60) {
-      return `${numericMinutes.toFixed(2)} min`;
+      return `${numericMinutes.toFixed(0)} min`;
     }
 
-    const hours = numericMinutes / 60;
-
-    return `${hours.toFixed(2)} hrs`;
+    return `${(numericMinutes / 60).toFixed(1)} hrs`;
   };
 
+  const formatDetailedTime = (minutes) => {
+    const numericMinutes = Number(minutes) || 0;
+
+    if (numericMinutes < 60) {
+      return `${numericMinutes.toFixed(0)} min`;
+    }
+
+    const hours = Math.floor(numericMinutes / 60);
+    const remainingMinutes = Math.round(numericMinutes % 60);
+
+    if (remainingMinutes === 0) {
+      return `${hours} hr`;
+    }
+
+    return `${hours} hr ${remainingMinutes} min`;
+  };
+
+  const totalMinutes = Number(stats?.totalMinutes) || 0;
+
+  const taskStats = useMemo(() => {
+    if (!stats?.taskStats) return [];
+
+    return [...stats.taskStats].sort(
+      (a, b) => Number(b.totalMinutes) - Number(a.totalMinutes),
+    );
+  }, [stats]);
+
+  const topTask = taskStats[0];
+
+  const averageTaskMinutes =
+    taskStats.length > 0 ? totalMinutes / taskStats.length : 0;
+
+  /*
+   * ------------------------------------------------------------
+   * THEME
+   * ------------------------------------------------------------
+   */
+
+  const pageClass = isDark
+    ? "bg-[#0B0B0D] text-white"
+    : "bg-[#F5F5F2] text-[#171717]";
+
+  const borderClass = isDark ? "border-white/[0.07]" : "border-black/[0.075]";
+
+  const primaryText = isDark ? "text-white" : "text-[#171717]";
+
+  const secondaryText = isDark ? "text-zinc-400" : "text-[#555550]";
+
+  const mutedText = isDark ? "text-zinc-600" : "text-[#777770]";
+
+  const subtleText = isDark ? "text-zinc-700" : "text-[#999990]";
+
+  const panelClass = isDark
+    ? "border-white/[0.07] bg-[#111114]"
+    : "border-black/[0.075] bg-white";
+
+  const tableHeadClass = isDark ? "bg-white/[0.025]" : "bg-[#FAFAF7]";
+
+  const tableHoverClass = isDark
+    ? "hover:bg-white/[0.018]"
+    : "hover:bg-[#FAFAF7]";
+
+  const trackClass = isDark ? "bg-white/[0.06]" : "bg-[#E7E7E1]";
+
+  const barClass = isDark ? "bg-white" : "bg-[#242421]";
+
+  /*
+   * ------------------------------------------------------------
+   * RENDER
+   * ------------------------------------------------------------
+   */
+
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#0B0B0D] text-white">
+    <div
+      className={`min-h-screen w-full overflow-x-hidden transition-colors duration-300 ${pageClass}`}
+    >
       <Sidebar />
 
       <main className="min-h-screen w-full md:pl-60">
-        {/* Header */}
-        <header className="border-b border-white/6 px-5 py-8 sm:px-8 md:px-10">
-          <div className="mx-auto w-full max-w-5xl">
-            <p className="text-xs text-zinc-600">Overview</p>
+        {/* HEADER */}
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              Statistics
-            </h1>
+        <header className={`border-b ${borderClass}`}>
+          <div className="mx-auto flex min-h-24 w-full max-w-6xl items-center justify-between gap-6 px-5 sm:px-8 md:px-10">
+            <div>
+              <p
+                className={`text-[10px] font-medium uppercase tracking-[0.18em] ${mutedText}`}
+              >
+                Overview
+              </p>
 
-            <p className="mt-2 text-sm text-zinc-500">
-              See where your focus time is going.
-            </p>
+              <h1
+                className={`mt-2 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl ${primaryText}`}
+              >
+                Statistics
+              </h1>
+
+              <p className={`mt-1.5 text-sm ${secondaryText}`}>
+                A clear view of where your focus is going.
+              </p>
+            </div>
+
+            <div className="hidden text-right sm:block">
+              <p
+                className={`text-[10px] font-medium uppercase tracking-[0.16em] ${subtleText}`}
+              >
+                Viewing
+              </p>
+
+              <p className={`mt-1 text-sm font-medium ${secondaryText}`}>
+                {ranges.find((item) => item.value === range)?.label}
+              </p>
+            </div>
           </div>
         </header>
 
-        {/* Content */}
-        <section className="mx-auto w-full max-w-5xl px-5 py-8 pb-28 sm:px-8 md:px-10 md:pb-10">
-          {/* Range selector */}
-          <div className="mb-8 flex w-full overflow-x-auto border-b border-white/6">
-            {ranges.map((item) => (
-              <button
-                key={item.value}
-                onClick={() => setRange(item.value)}
-                className={`
-                relative
-                shrink-0
-                px-5
-                py-3
-                text-xs
-                font-medium
-                transition-colors
-                ${
-                  range === item.value
-                    ? "text-white"
-                    : "text-zinc-600 hover:text-zinc-300"
-                }
-              `}
-              >
-                {item.label}
+        {/* CONTENT */}
 
-                {range === item.value && (
-                  <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
-                )}
-              </button>
-            ))}
+        <section className="mx-auto w-full max-w-6xl px-5 py-8 pb-28 sm:px-8 md:px-10 md:pb-12">
+          {/* RANGE */}
+
+          <div
+            className={`mb-8 inline-flex max-w-full overflow-x-auto rounded-lg border p-1 ${panelClass}`}
+          >
+            {ranges.map((item) => {
+              const active = range === item.value;
+
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setRange(item.value)}
+                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-medium transition-colors ${
+                    active
+                      ? isDark
+                        ? "bg-white text-black"
+                        : "bg-[#171717] text-white"
+                      : isDark
+                        ? "text-zinc-500 hover:bg-white/4 hover:text-zinc-300"
+                        : "text-[#777770] hover:bg-[#F1F1ED] hover:text-[#222]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Loading */}
+          {/* LOADING */}
+
           {loading && (
-            <div className="mb-6 flex items-center gap-3 text-xs text-zinc-600">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500" />
+            <div
+              className={`mb-6 flex items-center gap-3 border-b border-t px-1 py-3 text-xs ${borderClass} ${mutedText}`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  isDark ? "bg-zinc-400" : "bg-zinc-500"
+                } animate-pulse`}
+              />
               Updating statistics...
             </div>
           )}
 
           {stats ? (
             <>
-              {/* Main statistic */}
-              <div className="border-y border-white/6 py-10">
-                <p className="text-xs text-zinc-600">Total focused</p>
+              {/* ==================================================
+                  SUMMARY
+              ================================================== */}
 
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <h2 className="font-num text-5xl font-semibold tracking-[-0.06em] text-white sm:text-6xl">
-                    {formatTime(stats.totalMinutes)}
-                  </h2>
+              <div
+                className={`overflow-hidden rounded-xl border ${panelClass}`}
+              >
+                <div className="grid grid-cols-2 lg:grid-cols-4">
+                  {/* TOTAL */}
 
-                  <p className="max-w-xs text-xs leading-relaxed text-zinc-600 sm:text-right">
-                    Time spent in completed focus sessions during this period.
-                  </p>
-                </div>
-              </div>
-
-              {/* Task statistics */}
-              <div className="mt-10">
-                <div className="mb-5 flex items-end justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-300">
-                      Focus by task
+                  <div
+                    className={`border-b border-r px-5 py-6 lg:border-b-0 ${borderClass}`}
+                  >
+                    <p
+                      className={`text-[10px] font-medium uppercase tracking-[0.15em] ${mutedText}`}
+                    >
+                      Total focus
                     </p>
 
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Your most focused work
+                    <p
+                      className={`mt-3 font-num text-3xl font-semibold tracking-[-0.055em] ${primaryText}`}
+                    >
+                      {formatTime(totalMinutes)}
+                    </p>
+
+                    <p className={`mt-1.5 text-xs ${mutedText}`}>
+                      Completed sessions
                     </p>
                   </div>
 
-                  <span className="text-xs text-zinc-700">
-                    {stats.taskStats.length}{" "}
-                    {stats.taskStats.length === 1 ? "task" : "tasks"}
-                  </span>
-                </div>
+                  {/* TASKS */}
 
-                {stats.taskStats.length === 0 ? (
-                  <div className="border-y border-white/6 py-14 text-center">
-                    <p className="text-sm text-zinc-500">
-                      No focus sessions yet.
+                  <div
+                    className={`border-b px-5 py-6 lg:border-b-0 lg:border-r ${borderClass}`}
+                  >
+                    <p
+                      className={`text-[10px] font-medium uppercase tracking-[0.15em] ${mutedText}`}
+                    >
+                      Focused tasks
                     </p>
 
-                    <p className="mt-2 text-xs text-zinc-700">
-                      Complete a focus session to start seeing your data.
+                    <p
+                      className={`mt-3 font-num text-3xl font-semibold tracking-[-0.055em] ${primaryText}`}
+                    >
+                      {taskStats.length}
+                    </p>
+
+                    <p className={`mt-1.5 text-xs ${mutedText}`}>
+                      Tasks with activity
+                    </p>
+                  </div>
+
+                  {/* TOP TASK */}
+
+                  <div className={`border-r px-5 py-6 ${borderClass}`}>
+                    <p
+                      className={`text-[10px] font-medium uppercase tracking-[0.15em] ${mutedText}`}
+                    >
+                      Top task
+                    </p>
+
+                    <p
+                      className={`mt-3 truncate text-base font-semibold tracking-tight ${primaryText}`}
+                    >
+                      {topTask?.title || "No data"}
+                    </p>
+
+                    <p className={`mt-1.5 text-xs ${mutedText}`}>
+                      {topTask
+                        ? formatDetailedTime(topTask.totalMinutes)
+                        : "Start a focus session"}
+                    </p>
+                  </div>
+
+                  {/* AVERAGE */}
+
+                  <div className="px-5 py-6">
+                    <p
+                      className={`text-[10px] font-medium uppercase tracking-[0.15em] ${mutedText}`}
+                    >
+                      Average
+                    </p>
+
+                    <p
+                      className={`mt-3 font-num text-3xl font-semibold tracking-[-0.055em] ${primaryText}`}
+                    >
+                      {formatTime(averageTaskMinutes)}
+                    </p>
+
+                    <p className={`mt-1.5 text-xs ${mutedText}`}>
+                      Focus per task
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ==================================================
+                  TABLE
+              ================================================== */}
+
+              <div
+                className={`mt-8 overflow-hidden rounded-xl border ${panelClass}`}
+              >
+                <div
+                  className={`flex flex-col gap-4 border-b px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 ${borderClass}`}
+                >
+                  <div>
+                    <h2 className={`text-sm font-semibold ${primaryText}`}>
+                      Focus breakdown
+                    </h2>
+
+                    <p className={`mt-1 text-xs ${mutedText}`}>
+                      Your focus time by task.
+                    </p>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <p
+                      className={`text-[10px] uppercase tracking-[0.14em] ${subtleText}`}
+                    >
+                      Total
+                    </p>
+
+                    <p
+                      className={`mt-1 font-num text-sm font-medium ${secondaryText}`}
+                    >
+                      {formatDetailedTime(totalMinutes)}
+                    </p>
+                  </div>
+                </div>
+
+                {taskStats.length === 0 ? (
+                  <div className="px-6 py-20 text-center">
+                    <p className={`text-sm font-medium ${secondaryText}`}>
+                      No focus data yet
+                    </p>
+
+                    <p
+                      className={`mx-auto mt-2 max-w-sm text-xs leading-relaxed ${mutedText}`}
+                    >
+                      Complete a focus session and your activity will appear
+                      here.
                     </p>
                   </div>
                 ) : (
-                  <div className="border-t border-white/6">
-                    {stats.taskStats.map((task) => (
-                      <div
-                        key={task.taskId}
-                        className="
-                        grid
-                        grid-cols-[minmax(0,1fr)_auto]
-                        items-center
-                        gap-5
-                        border-b
-                        border-white/6
-                        py-5
-                      "
-                      >
-                        {/* Task */}
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-zinc-300">
-                            {task.title}
-                          </p>
+                  <>
+                    {/* DESKTOP */}
 
-                          <div className="mt-3 h-0.5 w-full max-w-xl overflow-hidden bg-zinc-900">
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr
+                            className={`border-b ${borderClass} ${tableHeadClass}`}
+                          >
+                            <th
+                              className={`w-16 px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.14em] ${subtleText}`}
+                            >
+                              #
+                            </th>
+
+                            <th
+                              className={`px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.14em] ${subtleText}`}
+                            >
+                              Task
+                            </th>
+
+                            <th
+                              className={`px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.14em] ${subtleText}`}
+                            >
+                              Focus time
+                            </th>
+
+                            <th
+                              className={`px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.14em] ${subtleText}`}
+                            >
+                              Share
+                            </th>
+
+                            <th
+                              className={`w-65 px-6 py-3 text-right text-[10px] font-medium uppercase tracking-[0.14em] ${subtleText}`}
+                            >
+                              Distribution
+                            </th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {taskStats.map((task, index) => {
+                            const taskMinutes = Number(task.totalMinutes) || 0;
+
+                            const percentage =
+                              totalMinutes > 0
+                                ? Math.min(
+                                    100,
+                                    (taskMinutes / totalMinutes) * 100,
+                                  )
+                                : 0;
+
+                            return (
+                              <tr
+                                key={task.taskId}
+                                className={`group border-b last:border-b-0 ${borderClass} ${tableHoverClass}`}
+                              >
+                                <td className="px-6 py-5">
+                                  <span
+                                    className={`font-num text-xs ${
+                                      index === 0 ? primaryText : subtleText
+                                    }`}
+                                  >
+                                    {String(index + 1).padStart(2, "0")}
+                                  </span>
+                                </td>
+
+                                <td className="min-w-60 px-4 py-5">
+                                  <p
+                                    className={`max-w-[320px] truncate text-sm font-medium ${
+                                      isDark
+                                        ? "text-zinc-300 group-hover:text-white"
+                                        : "text-[#33332F] group-hover:text-[#111]"
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </p>
+
+                                  <p
+                                    className={`mt-1 text-[11px] ${subtleText}`}
+                                  >
+                                    Focus activity
+                                  </p>
+                                </td>
+
+                                <td className="whitespace-nowrap px-4 py-5">
+                                  <span
+                                    className={`font-num text-sm font-medium ${
+                                      isDark
+                                        ? "text-zinc-300"
+                                        : "text-[#454540]"
+                                    }`}
+                                  >
+                                    {formatDetailedTime(taskMinutes)}
+                                  </span>
+                                </td>
+
+                                <td className="whitespace-nowrap px-4 py-5">
+                                  <span
+                                    className={`font-num text-sm ${secondaryText}`}
+                                  >
+                                    {percentage.toFixed(0)}%
+                                  </span>
+                                </td>
+
+                                <td className="px-6 py-5">
+                                  <div className="flex items-center justify-end gap-3">
+                                    <div
+                                      className={`h-1.5 w-36 overflow-hidden rounded-full ${trackClass}`}
+                                    >
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+                                        style={{
+                                          width: `${percentage}%`,
+                                        }}
+                                      />
+                                    </div>
+
+                                    <span
+                                      className={`w-8 text-right text-[10px] ${subtleText}`}
+                                    >
+                                      {percentage.toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* MOBILE */}
+
+                    <div className={`divide-y md:hidden ${borderClass}`}>
+                      {taskStats.map((task, index) => {
+                        const taskMinutes = Number(task.totalMinutes) || 0;
+
+                        const percentage =
+                          totalMinutes > 0
+                            ? Math.min(100, (taskMinutes / totalMinutes) * 100)
+                            : 0;
+
+                        return (
+                          <div key={task.taskId} className="px-5 py-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <span
+                                  className={`pt-0.5 font-num text-[10px] ${subtleText}`}
+                                >
+                                  {String(index + 1).padStart(2, "0")}
+                                </span>
+
+                                <div className="min-w-0">
+                                  <p
+                                    className={`truncate text-sm font-medium ${
+                                      isDark
+                                        ? "text-zinc-300"
+                                        : "text-[#33332F]"
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </p>
+
+                                  <p
+                                    className={`mt-1 text-[11px] ${mutedText}`}
+                                  >
+                                    {percentage.toFixed(0)}% of total focus
+                                  </p>
+                                </div>
+                              </div>
+
+                              <p
+                                className={`shrink-0 font-num text-sm font-medium ${secondaryText}`}
+                              >
+                                {formatDetailedTime(taskMinutes)}
+                              </p>
+                            </div>
+
                             <div
-                              className="h-full bg-zinc-500"
-                              style={{
-                                width: `${
-                                  stats.totalMinutes > 0
-                                    ? Math.min(
-                                        100,
-                                        (Number(task.totalMinutes) /
-                                          Number(stats.totalMinutes)) *
-                                          100,
-                                      )
-                                    : 0
-                                }%`,
-                              }}
-                            />
+                              className={`mt-4 h-1.5 overflow-hidden rounded-full ${trackClass}`}
+                            >
+                              <div
+                                className={`h-full rounded-full ${barClass}`}
+                                style={{
+                                  width: `${percentage}%`,
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Time */}
-                        <p className="font-num whitespace-nowrap text-sm text-zinc-500">
-                          {formatTime(task.totalMinutes)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
+
+              {/* ==================================================
+                  INSIGHT
+              ================================================== */}
+
+              {topTask && (
+                <div
+                  className={`mt-6 border-t border-b px-1 py-5 ${borderClass}`}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p
+                        className={`text-[10px] font-medium uppercase tracking-[0.15em] ${subtleText}`}
+                      >
+                        Focus insight
+                      </p>
+
+                      <p className={`mt-2 text-sm ${secondaryText}`}>
+                        Your most focused task was{" "}
+                        <span className={`font-medium ${primaryText}`}>
+                          {topTask.title}
+                        </span>
+                        .
+                      </p>
+                    </div>
+
+                    <p
+                      className={`font-num text-sm font-medium ${secondaryText}`}
+                    >
+                      {formatDetailedTime(topTask.totalMinutes)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             !loading && (
-              <div className="border-y border-white/6 py-14 text-center">
-                <p className="text-sm text-zinc-500">
-                  Unable to load statistics.
+              <div
+                className={`rounded-xl border px-6 py-20 text-center ${panelClass}`}
+              >
+                <p className={`text-sm font-medium ${secondaryText}`}>
+                  Unable to load statistics
                 </p>
 
-                <p className="mt-2 text-xs text-zinc-700">
+                <p className={`mt-2 text-xs ${mutedText}`}>
                   Try selecting another period.
                 </p>
               </div>

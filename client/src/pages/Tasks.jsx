@@ -10,7 +10,37 @@ const Tasks = () => {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("theme") || "dark";
+  });
+
   const navigate = useNavigate();
+
+  const isDark = theme === "dark";
+
+  /*
+    ==========================================
+    THEME
+    ==========================================
+  */
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem("theme") || "dark");
+    };
+
+    window.addEventListener("themeChanged", handleThemeChange);
+
+    return () => {
+      window.removeEventListener("themeChanged", handleThemeChange);
+    };
+  }, []);
+
+  /*
+    ==========================================
+    LOAD TASKS
+    ==========================================
+  */
 
   const loadTasks = async () => {
     try {
@@ -43,6 +73,12 @@ const Tasks = () => {
     };
   }, []);
 
+  /*
+    ==========================================
+    CREATE TASK
+    ==========================================
+  */
+
   const handleCreateTask = async (e) => {
     e.preventDefault();
 
@@ -60,6 +96,12 @@ const Tasks = () => {
     }
   };
 
+  /*
+    ==========================================
+    TOGGLE TASK
+    ==========================================
+  */
+
   const handleToggleTask = async (taskId) => {
     try {
       await api.patch(`/tasks/${taskId}/toggle`);
@@ -70,6 +112,12 @@ const Tasks = () => {
     }
   };
 
+  /*
+    ==========================================
+    DELETE TASK
+    ==========================================
+  */
+
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
 
@@ -78,13 +126,18 @@ const Tasks = () => {
 
       await api.delete(`/tasks/${taskToDelete._id}`);
 
-      // Remove deleted task from localStorage
       const savedTask = localStorage.getItem("selectedTask");
 
       if (savedTask) {
-        const selectedTask = JSON.parse(savedTask);
+        try {
+          const selectedTask = JSON.parse(savedTask);
 
-        if (selectedTask._id === taskToDelete._id) {
+          if (selectedTask._id === taskToDelete._id) {
+            localStorage.removeItem("selectedTask");
+
+            window.dispatchEvent(new Event("selectedTaskChanged"));
+          }
+        } catch {
           localStorage.removeItem("selectedTask");
         }
       }
@@ -99,211 +152,230 @@ const Tasks = () => {
     }
   };
 
+  /*
+    ==========================================
+    FOCUS TASK
+    ==========================================
+  */
+
   const handleFocusTask = (task) => {
     localStorage.setItem("selectedTask", JSON.stringify(task));
+
+    window.dispatchEvent(new Event("selectedTaskChanged"));
+
     navigate("/dashboard");
   };
 
+  /*
+    ==========================================
+    THEME CLASSES
+    ==========================================
+  */
+
+  const pageClass = isDark
+    ? "bg-[#0B0B0D] text-white"
+    : "bg-[#F7F7F5] text-[#171717]";
+
+  const borderClass = isDark ? "border-white/[0.06]" : "border-black/[0.08]";
+
+  const primaryText = isDark ? "text-white" : "text-[#171717]";
+
+  const secondaryText = isDark ? "text-zinc-500" : "text-zinc-600";
+
+  const mutedText = isDark ? "text-zinc-600" : "text-zinc-500";
+
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#0B0B0D] text-white">
-      <Sidebar />
+    <div
+      className={`min-h-screen w-full overflow-x-hidden transition-colors duration-300 ${pageClass}`}
+    >
+      <Sidebar theme={theme} />
 
       <main className="min-h-screen w-full md:pl-60">
-        {/* Header */}
-        <header className="border-b border-white/6 px-5 py-8 sm:px-8 md:px-10">
-          <div className="mx-auto w-full max-w-5xl">
-            <p className="text-xs text-zinc-600">Workspace</p>
+        {/* HEADER */}
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+        <header
+          className={`border-b px-5 py-8 transition-colors duration-300 sm:px-8 md:px-10 ${borderClass}`}
+        >
+          <div className="mx-auto w-full max-w-5xl">
+            <p
+              className={`text-[10px] font-medium uppercase tracking-[0.18em] ${mutedText}`}
+            >
+              Workspace
+            </p>
+
+            <h1
+              className={`mt-3 text-3xl font-semibold tracking-[-0.03em] ${primaryText}`}
+            >
               Tasks
             </h1>
 
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className={`mt-2 text-sm ${secondaryText}`}>
               Decide what deserves your attention.
             </p>
           </div>
         </header>
 
-        {/* Content */}
+        {/* CONTENT */}
+
         <section className="mx-auto w-full max-w-5xl px-5 py-8 pb-28 sm:px-8 md:px-10 md:pb-10">
-          {/* Add task */}
+          {/* ADD TASK */}
+
           <form
             onSubmit={handleCreateTask}
-            className="
-            flex flex-col gap-3
-            border-b border-white/6
-            pb-8
-            sm:flex-row
-          "
+            className={`flex flex-col gap-3 border-b pb-8 sm:flex-row ${borderClass}`}
           >
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What do you want to focus on?"
-              className="
-              min-w-0
-              flex-1
-              rounded-lg
-              border border-white/[0.07]
-              bg-[#111114]
-              px-4
-              py-3.5
-              text-sm
-              text-white
-              outline-none
-              placeholder:text-zinc-700
-              transition-colors
-              focus:border-white/15
-            "
+              className={`min-w-0 flex-1 rounded-xl border px-4 py-3.5 text-sm outline-none transition-all duration-200 ${
+                isDark
+                  ? "border-white/7 bg-[#111114] text-white placeholder:text-zinc-700 focus:border-white/16 focus:bg-[#131316]"
+                  : "border-black/8 bg-white text-[#171717] shadow-sm placeholder:text-zinc-400 focus:border-black/16 focus:shadow-md"
+              }`}
             />
 
             <button
               type="submit"
-              className="
-              rounded-lg
-              bg-white
-              px-7
-              py-3.5
-              text-sm
-              font-medium
-              text-black
-              transition-colors
-              hover:bg-zinc-200
-            "
+              className={`rounded-xl px-7 py-3.5 text-sm font-medium transition-all duration-200 active:scale-[0.99] ${
+                isDark
+                  ? "bg-white text-black hover:bg-zinc-200"
+                  : "bg-[#171717] text-white shadow-sm hover:bg-black"
+              }`}
             >
               Add task
             </button>
           </form>
 
-          {/* Task heading */}
+          {/* TASK HEADING */}
+
           <div className="flex items-center justify-between py-7">
             <div>
-              <p className="text-sm font-medium text-zinc-300">Your tasks</p>
+              <p className={`text-sm font-medium ${primaryText}`}>Your tasks</p>
 
-              <p className="mt-1 text-xs text-zinc-600">
+              <p className={`mt-1 text-xs ${mutedText}`}>
                 {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
               </p>
             </div>
           </div>
 
-          {/* Tasks */}
-          {tasks.length === 0 ? (
-            <div className="border-y border-white/6 py-16 text-center">
-              <p className="text-sm text-zinc-500">Nothing here yet.</p>
+          {/* TASKS */}
 
-              <p className="mt-2 text-xs text-zinc-700">
+          {tasks.length === 0 ? (
+            <div
+              className={`rounded-2xl border py-16 text-center ${
+                isDark
+                  ? "border-white/6 bg-[#111114]"
+                  : "border-black/[0.07] bg-white shadow-sm"
+              }`}
+            >
+              <p className={`text-sm ${secondaryText}`}>Nothing here yet.</p>
+
+              <p className={`mt-2 text-xs ${mutedText}`}>
                 Add a task above to get started.
               </p>
             </div>
           ) : (
-            <div className="border-t border-white/6">
+            <div
+              className={`overflow-hidden rounded-2xl border ${
+                isDark
+                  ? "border-white/6 bg-[#111114]"
+                  : "border-black/[0.07] bg-white shadow-sm"
+              }`}
+            >
               {tasks.map((task) => (
                 <div
                   key={task._id}
-                  className="
-                  group
-                  flex
-                  min-w-0
-                  flex-col
-                  gap-4
-                  border-b
-                  border-white/6
-                  py-5
-                  sm:flex-row
-                  sm:items-center
-                  sm:justify-between
-                "
+                  className={`group flex min-w-0 flex-col gap-4 border-b px-5 py-5 transition-colors last:border-b-0 sm:flex-row sm:items-center sm:justify-between ${
+                    isDark
+                      ? "border-white/6 hover:bg-white/1.5"
+                      : "border-black/6 hover:bg-black/1.5"
+                  }`}
                 >
-                  {/* Left */}
+                  {/* LEFT */}
+
                   <div className="flex min-w-0 items-center gap-4">
                     <button
+                      type="button"
                       onClick={() => handleToggleTask(task._id)}
                       aria-label={
                         task.completed
                           ? "Mark task incomplete"
                           : "Mark task complete"
                       }
-                      className={`
-                      flex
-                      h-5
-                      w-5
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      transition-colors
-                      ${
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
                         task.completed
-                          ? "border-white bg-white"
-                          : "border-zinc-700 hover:border-zinc-400"
-                      }
-                    `}
+                          ? isDark
+                            ? "border-white bg-white"
+                            : "border-[#171717] bg-[#171717]"
+                          : isDark
+                            ? "border-zinc-700 hover:border-zinc-400"
+                            : "border-zinc-300 hover:border-zinc-500"
+                      }`}
                     >
                       {task.completed && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-black" />
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isDark ? "bg-black" : "bg-white"
+                          }`}
+                        />
                       )}
                     </button>
 
                     <div className="min-w-0">
                       <p
-                        className={`
-                        wrap-break-word
-                        text-sm
-                        ${
+                        className={`wrap-break-word text-sm ${
                           task.completed
-                            ? "text-zinc-600 line-through"
-                            : "text-zinc-200"
-                        }
-                      `}
+                            ? isDark
+                              ? "text-zinc-600 line-through"
+                              : "text-zinc-400 line-through"
+                            : isDark
+                              ? "text-zinc-200"
+                              : "text-zinc-800"
+                        }`}
                       >
                         {task.title}
                       </p>
 
-                      <p className="mt-1 text-[11px] text-zinc-700">
+                      <p
+                        className={`mt-1 text-[11px] ${
+                          task.completed
+                            ? isDark
+                              ? "text-zinc-700"
+                              : "text-zinc-400"
+                            : mutedText
+                        }`}
+                      >
                         {task.completed ? "Completed" : "Not completed"}
                       </p>
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* ACTIONS */}
+
                   <div className="flex items-center gap-2 pl-9 sm:pl-0">
                     <button
+                      type="button"
                       onClick={() => handleFocusTask(task)}
                       disabled={task.completed}
-                      className="
-                      rounded-md
-                      border border-white/[0.07]
-                      bg-[#111114]
-                      px-4
-                      py-2
-                      text-xs
-                      font-medium
-                      text-zinc-400
-                      transition-colors
-                      hover:border-white/[0.14]
-                      hover:text-white
-                      disabled:cursor-not-allowed
-                      disabled:border-white/4
-                      disabled:text-zinc-700
-                    "
+                      className={`rounded-lg border px-4 py-2 text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed ${
+                        isDark
+                          ? "border-white/7 bg-[#151518] text-zinc-400 hover:border-white/14 hover:text-white disabled:border-white/4 disabled:bg-transparent disabled:text-zinc-700"
+                          : "border-black/8 bg-white text-zinc-600 shadow-sm hover:border-black/14 hover:text-black disabled:border-black/5 disabled:bg-transparent disabled:text-zinc-400"
+                      }`}
                     >
                       Focus
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => setTaskToDelete(task)}
-                      className="
-                      rounded-md
-                      px-3
-                      py-2
-                      text-xs
-                      text-zinc-600
-                      transition-colors
-                      hover:bg-red-500/6
-                      hover:text-red-400
-                    "
+                      className={`rounded-lg px-3 py-2 text-xs transition-all duration-200 ${
+                        isDark
+                          ? "text-zinc-600 hover:bg-red-500/6 hover:text-red-400"
+                          : "text-zinc-500 hover:bg-red-500/6 hover:text-red-500"
+                      }`}
                     >
                       Delete
                     </button>
@@ -314,49 +386,46 @@ const Tasks = () => {
           )}
         </section>
 
-        {/* Delete modal */}
-        {taskToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-            <div className="w-full max-w-md border border-white/[0.07] bg-[#111114] p-6 shadow-2xl">
-              <h2 className="text-lg font-semibold">Delete task?</h2>
+        {/* DELETE MODAL */}
 
-              <p className="mt-3 wrap-break-word text-sm leading-relaxed text-zinc-500">
+        {taskToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+            <div
+              className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl ${
+                isDark
+                  ? "border-white/6 bg-[#111114]"
+                  : "border-black/6 bg-white"
+              }`}
+            >
+              <h2 className={`text-lg font-semibold ${primaryText}`}>
+                Delete task?
+              </h2>
+
+              <p
+                className={`mt-3 wrap-break-word text-sm leading-relaxed ${secondaryText}`}
+              >
                 Are you sure you want to delete "{taskToDelete.title}"?
               </p>
 
               <div className="mt-7 flex justify-end gap-3">
                 <button
+                  type="button"
                   onClick={() => setTaskToDelete(null)}
                   disabled={isDeleting}
-                  className="
-                  rounded-lg
-                  px-5
-                  py-2.5
-                  text-sm
-                  text-zinc-500
-                  transition-colors
-                  hover:bg-white/4
-                  hover:text-white
-                "
+                  className={`rounded-lg px-5 py-2.5 text-sm transition-colors ${
+                    isDark
+                      ? "text-zinc-500 hover:bg-white/4 hover:text-white"
+                      : "text-zinc-600 hover:bg-black/4 hover:text-black"
+                  }`}
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleDeleteTask}
                   disabled={isDeleting}
-                  className="
-                  rounded-lg
-                  bg-red-500
-                  px-5
-                  py-2.5
-                  text-sm
-                  font-medium
-                  text-white
-                  transition-colors
-                  hover:bg-red-600
-                  disabled:opacity-50
-                "
+                  className="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </button>

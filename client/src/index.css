@@ -5,3 +5,112 @@
   --font-primary: "Plus Jakarta Sans", sans-serif;
   --font-num: "Bitcount Prop Single", system-ui;
 }
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.flame-outer {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: flameOuter 2.8s ease-in-out infinite;
+}
+
+.flame-inner {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: flameInner 1.9s ease-in-out infinite;
+}
+
+.flame-core {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: flameCore 1.4s ease-in-out infinite;
+}
+
+/* Outer flame — slow natural sway */
+
+@keyframes flameOuter {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-1deg) scale(1, 1);
+  }
+
+  25% {
+    transform: translate3d(2px, -1px, 0) rotate(1deg) scale(1.01, 1.03);
+  }
+
+  50% {
+    transform: translate3d(-2px, 0, 0) rotate(-1deg) scale(0.99, 0.98);
+  }
+
+  75% {
+    transform: translate3d(1px, -1px, 0) rotate(1deg) scale(1.01, 1.03);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1deg) scale(1, 1);
+  }
+}
+
+/* Inner flame — slightly more active */
+
+@keyframes flameInner {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(1deg) scale(1, 1);
+  }
+
+  25% {
+    transform: translate3d(-2px, 0, 0) rotate(-2deg) scale(0.99, 1.03);
+  }
+
+  50% {
+    transform: translate3d(2px, -1px, 0) rotate(2deg) scale(1.01, 0.98);
+  }
+
+  75% {
+    transform: translate3d(-1px, 0, 0) rotate(-1deg) scale(0.99, 1.02);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(1deg) scale(1, 1);
+  }
+}
+
+/* Hot center — gentle flicker */
+
+@keyframes flameCore {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+
+  30% {
+    transform: translateX(-1px) scale(0.97);
+    opacity: 0.9;
+  }
+
+  60% {
+    transform: translateX(1px) scale(1.03);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .flame-outer,
+  .flame-inner,
+  .flame-core {
+    animation: none;
+  }
+}

@@ -26,20 +26,20 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-97.5 -translate-x-1/2 md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 md:hidden">
       <div
         className="
-          relative
+          mx-auto
           flex
           h-18
+          max-w-sm
           items-center
-          justify-around
-          rounded-3xl
+          rounded-2xl
           border
           border-white/8
-          bg-[#0F0F12]/95
+          bg-[#101012]/95
           px-2
-          shadow-[0_18px_60px_rgba(0,0,0,0.5)]
+          shadow-[0_12px_45px_rgba(0,0,0,0.45)]
           backdrop-blur-2xl
         "
       >
@@ -50,41 +50,74 @@ const BottomNav = () => {
             <NavLink
               key={link.path}
               to={link.path}
-              className="relative flex h-full min-w-17 items-center justify-center"
+              className="group flex h-full flex-1 items-center justify-center"
             >
               {({ isActive }) => (
-                <div
-                  className={`
-                    relative
-                    flex
-                    h-13
-                    min-w-14.5
-                    flex-col
-                    items-center
-                    justify-center
-                    rounded-[17px]
-                    transition-all
-                    duration-200
-                    ${
-                      isActive
-                        ? "bg-white text-black"
-                        : "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"
-                    }
-                  `}
-                >
-                  <Icon size={19} strokeWidth={isActive ? 2.1 : 1.7} />
-
-                  <span
+                <div className="relative flex w-full items-center justify-center">
+                  <div
                     className={`
-                      mt-1
-                      text-[9px]
-                      font-medium
-                      tracking-wide
-                      ${isActive ? "text-black" : "text-zinc-700"}
+                      flex
+                      min-w-14.5
+                      flex-col
+                      items-center
+                      gap-1.5
+                      transition-all
+                      duration-200
+                      ${
+                        isActive
+                          ? "text-white"
+                          : "text-zinc-600 group-hover:text-zinc-300"
+                      }
                     `}
                   >
-                    {link.name}
-                  </span>
+                    <div
+                      className={`
+                        flex
+                        h-9
+                        w-9
+                        items-center
+                        justify-center
+                        rounded-xl
+                        transition-all
+                        duration-200
+                        ${
+                          isActive
+                            ? "bg-white text-black shadow-[0_4px_15px_rgba(255,255,255,0.12)]"
+                            : "bg-transparent"
+                        }
+                      `}
+                    >
+                      <Icon size={18} strokeWidth={isActive ? 2.1 : 1.7} />
+                    </div>
+
+                    <span
+                      className={`
+                        text-[9px]
+                        font-medium
+                        leading-none
+                        ${
+                          isActive
+                            ? "text-zinc-200"
+                            : "text-zinc-700 group-hover:text-zinc-500"
+                        }
+                      `}
+                    >
+                      {link.name}
+                    </span>
+                  </div>
+
+                  {isActive && (
+                    <span
+                      className="
+                        absolute
+                        -bottom-1
+                        h-0.5
+                        w-4
+                        rounded-full
+                        bg-white/80
+                      "
+                    />
+                  )}
                 </div>
               )}
             </NavLink>
