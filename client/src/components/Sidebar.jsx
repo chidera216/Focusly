@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, ListTodo, ChartColumn, User } from "lucide-react";
+import {
+  LayoutDashboard,
+  ListTodo,
+  ChartColumn,
+  User,
+  ChevronRight,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
@@ -46,77 +52,48 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`
-        hidden
-        md:flex
-        md:flex-col
-        fixed
-        left-0
-        top-0
-        z-40
-        h-screen
-        w-60
-        border-r
-        transition-colors
-        duration-300
-        ${
-          isDark ? "border-white/6 bg-[#090909]" : "border-black/7 bg-[#FAFAF8]"
-        }
-      `}
+      className={`fixed left-0 top-0 z-40 hidden h-screen w-[248px] flex-col border-r md:flex ${
+        isDark
+          ? "border-white/[0.055] bg-[#0D0D0F]"
+          : "border-black/[0.06] bg-[#F8F8F6]"
+      }`}
     >
-      {/* Brand */}
+      {/* BRAND */}
 
-      <div className="px-7 py-7">
-        <NavLink to="/dashboard" className="flex items-center gap-3">
+      <div className="px-5 pt-6">
+        <NavLink
+          to="/dashboard"
+          className="group flex items-center gap-3 rounded-2xl px-2 py-2"
+        >
           <div
-            className={`
-              flex
-              h-12
-              w-12
-              items-center
-              justify-center
-              overflow-hidden
-              rounded-xl
-              border
-              transition-colors
-              duration-300
-              ${
-                isDark
-                  ? "border-white/8 bg-white/3"
-                  : "border-black/7 bg-white shadow-sm"
-              }
-            `}
+            className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-[14px] border ${
+              isDark
+                ? "border-white/[0.08] bg-[#171719]"
+                : "border-black/[0.06] bg-white shadow-sm"
+            }`}
           >
             <img
               src="/icons.svg"
               alt="Focusly"
               className="h-full w-full object-contain p-1.5"
             />
+
+            <div className="pointer-events-none absolute inset-0 rounded-[14px] bg-orange-400/[0.04]" />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <p
-              className={`
-                font-['Plus_Jakarta_Sans']
-                text-[15px]
-                font-semibold
-                tracking-tight
-                transition-colors
-                duration-300
-                ${isDark ? "text-white" : "text-[#171717]"}
-              `}
+              className={`font-['Plus_Jakarta_Sans'] text-[15px] font-bold tracking-[-0.03em] ${
+                isDark ? "text-white" : "text-[#171717]"
+              }`}
             >
               Focusly
             </p>
 
             <p
-              className={`
-                mt-0.5
-                text-[10px]
-                transition-colors
-                duration-300
-                ${isDark ? "text-zinc-600" : "text-zinc-500"}
-              `}
+              className={`mt-0.5 text-[10px] ${
+                isDark ? "text-zinc-600" : "text-zinc-500"
+              }`}
             >
               Stay focused
             </p>
@@ -124,37 +101,21 @@ const Sidebar = () => {
         </NavLink>
       </div>
 
-      {/* Divider */}
+      {/* WORKSPACE LABEL */}
 
-      <div
-        className={`
-          mx-6
-          h-px
-          transition-colors
-          duration-300
-          ${isDark ? "bg-white/5" : "bg-black/6"}
-        `}
-      />
-
-      {/* Navigation */}
-
-      <nav className="flex-1 px-4 py-6">
+      <div className="px-5 pb-3 pt-10">
         <p
-          className={`
-            px-3
-            pb-3
-            text-[10px]
-            font-medium
-            uppercase
-            tracking-[0.18em]
-            transition-colors
-            duration-300
-            ${isDark ? "text-zinc-600" : "text-zinc-500"}
-          `}
+          className={`px-2 text-[9px] font-bold uppercase tracking-[0.2em] ${
+            isDark ? "text-zinc-700" : "text-zinc-400"
+          }`}
         >
           Workspace
         </p>
+      </div>
 
+      {/* NAVIGATION */}
+
+      <nav className="px-3">
         <div className="space-y-1">
           {links.map((link) => {
             const Icon = link.icon;
@@ -163,50 +124,61 @@ const Sidebar = () => {
               <NavLink
                 key={link.path}
                 to={link.path}
-                className={({ isActive }) => `
-                  group
-                  flex
-                  items-center
-                  gap-3
-                  rounded-xl
-                  px-3
-                  py-3
-                  text-sm
-                  transition-all
-                  duration-200
-
+                className={({ isActive }) =>
+                  `
+                  group relative flex h-11 items-center gap-3 rounded-[14px] px-3
+                  text-[13px] font-medium transition-all duration-200
                   ${
                     isActive
                       ? isDark
-                        ? "bg-white/8 text-white"
-                        : "bg-black/5.5 text-[#171717]"
+                        ? "bg-white/[0.065] text-white"
+                        : "bg-white text-[#171717] shadow-sm"
                       : isDark
-                        ? "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"
-                        : "text-zinc-500 hover:bg-black/[0.035] hover:text-zinc-800"
+                        ? "text-zinc-600 hover:bg-white/[0.035] hover:text-zinc-300"
+                        : "text-zinc-500 hover:bg-black/[0.025] hover:text-zinc-800"
                   }
-                `}
+                `
+                }
               >
                 {({ isActive }) => (
                   <>
-                    <Icon
-                      size={18}
-                      strokeWidth={isActive ? 2 : 1.7}
-                      className={`
-                        transition-colors
-                        duration-200
-                        ${
-                          isActive
-                            ? isDark
-                              ? "text-white"
-                              : "text-[#171717]"
-                            : isDark
-                              ? "text-zinc-700 group-hover:text-zinc-400"
-                              : "text-zinc-400 group-hover:text-zinc-700"
-                        }
-                      `}
+                    {/* Active indicator */}
+
+                    <span
+                      className={`absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-all duration-200 ${
+                        isActive
+                          ? "bg-orange-400"
+                          : "bg-transparent group-hover:bg-zinc-500/30"
+                      }`}
                     />
 
-                    <span className="font-medium">{link.name}</span>
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-[10px] transition-all ${
+                        isActive
+                          ? isDark
+                            ? "bg-orange-400/10 text-orange-400"
+                            : "bg-orange-50 text-orange-500"
+                          : isDark
+                            ? "text-zinc-700 group-hover:text-zinc-400"
+                            : "text-zinc-400 group-hover:text-zinc-600"
+                      }`}
+                    >
+                      <Icon size={17} strokeWidth={isActive ? 2 : 1.7} />
+                    </span>
+
+                    <span className="flex-1">{link.name}</span>
+
+                    <ChevronRight
+                      size={14}
+                      strokeWidth={1.8}
+                      className={`transition-all duration-200 ${
+                        isActive
+                          ? isDark
+                            ? "translate-x-0 text-zinc-500"
+                            : "translate-x-0 text-zinc-400"
+                          : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                      }`}
+                    />
                   </>
                 )}
               </NavLink>
@@ -215,42 +187,50 @@ const Sidebar = () => {
         </div>
       </nav>
 
-      {/* Bottom */}
+      {/* FOCUS CARD */}
 
-      <div
-        className={`
-          border-t
-          px-7
-          py-5
-          transition-colors
-          duration-300
-          ${isDark ? "border-white/5" : "border-black/6"}
-        `}
-      >
-        <p
-          className={`
-            text-[10px]
-            uppercase
-            tracking-[0.16em]
-            transition-colors
-            duration-300
-            ${isDark ? "text-zinc-700" : "text-zinc-400"}
-          `}
+      <div className="mt-auto px-4 pb-4">
+        <div
+          className={`relative overflow-hidden rounded-[20px] border p-4 ${
+            isDark
+              ? "border-white/[0.06] bg-[#141416]"
+              : "border-black/[0.05] bg-white"
+          }`}
         >
-          Focusly
-        </p>
+          <div
+            className={`absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl ${
+              isDark ? "bg-orange-500/[0.08]" : "bg-orange-300/[0.18]"
+            }`}
+          />
 
-        <p
-          className={`
-            mt-1
-            text-[11px]
-            transition-colors
-            duration-300
-            ${isDark ? "text-zinc-600" : "text-zinc-500"}
-          `}
-        >
-          Focus on what matters.
-        </p>
+          <div className="relative">
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className={`text-[9px] font-bold uppercase tracking-[0.18em] ${
+                  isDark ? "text-zinc-600" : "text-zinc-400"
+                }`}
+              >
+                Focusly
+              </span>
+            </div>
+
+            <p
+              className={`text-xs font-semibold ${
+                isDark ? "text-zinc-300" : "text-zinc-700"
+              }`}
+            >
+              Focus on what matters.
+            </p>
+
+            <p
+              className={`mt-1 text-[10px] leading-4 ${
+                isDark ? "text-zinc-700" : "text-zinc-400"
+              }`}
+            >
+              One session at a time.
+            </p>
+          </div>
+        </div>
       </div>
     </aside>
   );

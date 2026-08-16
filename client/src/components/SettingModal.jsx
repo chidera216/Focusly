@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Minus, Plus } from "lucide-react";
+import { X, Minus, Plus, Moon, Sun } from "lucide-react";
 
 const SettingsModal = ({
   isOpen,
@@ -16,6 +16,8 @@ const SettingsModal = ({
 
   if (!isOpen) return null;
 
+  const isDark = theme === "dark";
+
   const updateFocus = (value) => {
     const minutes = Number(value);
 
@@ -23,7 +25,6 @@ const SettingsModal = ({
     setFocusMinutes(minutes);
 
     localStorage.setItem("focusMinutes", minutes);
-
     window.dispatchEvent(new Event("timerSettingsChanged"));
   };
 
@@ -34,7 +35,6 @@ const SettingsModal = ({
     setBreakMinutes(minutes);
 
     localStorage.setItem("breakMinutes", minutes);
-
     window.dispatchEvent(new Event("timerSettingsChanged"));
   };
 
@@ -76,73 +76,124 @@ const SettingsModal = ({
     return `${hours} hr ${remaining} min`;
   };
 
+  const colors = {
+    overlay: "bg-black/60",
+    modal: isDark
+      ? "border-white/[0.07] bg-[#19191C]"
+      : "border-black/[0.06] bg-[#FFFFFF]",
+    card: isDark
+      ? "border-white/[0.06] bg-white/[0.025]"
+      : "border-black/[0.05] bg-[#F8FAF7]",
+    text: isDark ? "text-white" : "text-[#171918]",
+    secondary: isDark ? "text-zinc-400" : "text-zinc-600",
+    muted: isDark ? "text-zinc-500" : "text-zinc-500",
+    border: isDark ? "border-white/[0.07]" : "border-black/[0.06]",
+    button: isDark
+      ? "border-white/[0.07] bg-white/[0.035] text-zinc-400 hover:bg-white/[0.07] hover:text-white"
+      : "border-black/[0.06] bg-[#FAF9F6] text-zinc-500 hover:bg-white hover:text-black",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-md">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/8 bg-[#101012] shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-md transition-colors duration-300 ${colors.overlay}`}
+    >
+      <div
+        className={`flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-[32px] border shadow-[0_30px_100px_rgba(0,0,0,0.3)] ${colors.modal}`}
+      >
         {/* Header */}
 
-        <div className="flex shrink-0 items-start justify-between border-b border-white/6 px-6 py-6 sm:px-7">
-          <div>
-            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-              Focusly
-            </p>
+        <div
+          className={`shrink-0 border-b px-5 py-5 sm:px-7 sm:py-6 ${colors.border}`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div>
+                <p
+                  className={`text-[9px] font-bold uppercase tracking-[0.18em] ${colors.muted}`}
+                >
+                  Focusly
+                </p>
 
-            <h2 className="text-xl font-semibold tracking-[-0.02em] text-white">
-              Timer settings
-            </h2>
+                <h2
+                  className={`mt-1 text-xl font-bold tracking-[-0.04em] ${colors.text}`}
+                >
+                  Timer settings
+                </h2>
 
-            <p className="mt-1.5 text-sm text-zinc-500">
-              Make the timer fit the way you work.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="Close settings"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-600 transition hover:bg-white/5 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Settings */}
-
-        <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-7 sm:px-7">
-          <div className="space-y-8">
-            {/* Appearance */}
-
-            <section>
-              <div className="mb-3">
-                <h3 className="text-sm font-medium text-white">Appearance</h3>
-
-                <p className="mt-1 text-xs text-zinc-600">
-                  Choose how Focusly looks.
+                <p className={`mt-1 text-xs ${colors.muted}`}>
+                  Make the timer fit the way you work.
                 </p>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/6 bg-[#151517] p-1.5">
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Close settings"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border transition active:scale-95 ${colors.border} ${colors.button}`}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+
+        <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-7">
+          <div className="space-y-4">
+            {/* Appearance */}
+
+            <section className={`rounded-[28px] border p-5 ${colors.card}`}>
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className={`text-sm font-bold ${colors.text}`}>
+                    Appearance
+                  </p>
+
+                  <p className={`mt-1 text-xs ${colors.muted}`}>
+                    Choose how Focusly looks.
+                  </p>
+                </div>
+
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
+                    isDark
+                      ? "bg-purple-500/10 text-purple-400"
+                      : "bg-[#FFF2C7] text-[#B28B28]"
+                  }`}
+                >
+                  {isDark ? <Moon size={17} /> : <Sun size={17} />}
+                </div>
+              </div>
+
+              <div
+                className={`grid grid-cols-2 gap-1.5 rounded-2xl border p-1.5 ${colors.border} ${
+                  isDark ? "bg-white/[0.025]" : "bg-[#F4F6F3]"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => handleThemeChange("dark")}
-                  className={`rounded-xl px-4 py-3 text-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-all ${
                     theme === "dark"
-                      ? "bg-white font-medium text-black shadow-sm"
-                      : "text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                      ? "bg-[#29292D] text-white shadow-sm"
+                      : colors.muted
                   }`}
                 >
+                  <Moon size={14} />
                   Dark
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleThemeChange("light")}
-                  className={`rounded-xl px-4 py-3 text-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-all ${
                     theme === "light"
-                      ? "bg-white font-medium text-black shadow-sm"
-                      : "text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                      ? "bg-white text-[#171918] shadow-sm"
+                      : colors.muted
                   }`}
                 >
+                  <Sun size={14} />
                   Light
                 </button>
               </div>
@@ -150,44 +201,50 @@ const SettingsModal = ({
 
             {/* Focus Duration */}
 
-            <section>
-              <div className="mb-5">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-white">
-                      Focus duration
-                    </h3>
+            <section className={`rounded-[28px] border p-5 ${colors.card}`}>
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className={`text-sm font-bold ${colors.text}`}>
+                    Focus duration
+                  </p>
 
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Choose exactly how long you want to focus.
-                    </p>
-                  </div>
-
-                  <span className="font-num text-lg font-semibold text-white">
-                    {formatMinutes(draftFocus)}
-                  </span>
+                  <p className={`mt-1 text-xs ${colors.muted}`}>
+                    Choose how long each focus session lasts.
+                  </p>
                 </div>
+
+                <span
+                  className={`font-num whitespace-nowrap text-lg font-semibold ${colors.text}`}
+                >
+                  {formatMinutes(draftFocus)}
+                </span>
               </div>
 
-              <div className="rounded-2xl border border-white/6 bg-[#151517] p-5">
-                {/* Number controls */}
-
-                <div className="mb-6 flex items-center justify-between">
+              <div
+                className={`rounded-[24px] border p-4 sm:p-5 ${colors.border} ${
+                  isDark ? "bg-white/[0.02]" : "bg-[#F8FAF7]"
+                }`}
+              >
+                <div className="mb-5 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => changeFocus(-1)}
                     disabled={draftFocus <= 1}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/7 bg-white/2.5 text-zinc-500 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Minus size={16} />
                   </button>
 
                   <div className="text-center">
-                    <p className="font-num text-4xl font-semibold tracking-tighter text-white">
+                    <p
+                      className={`font-num text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
+                    >
                       {draftFocus}
                     </p>
 
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                    <p
+                      className={`mt-1 text-[9px] font-bold uppercase tracking-[0.16em] ${colors.muted}`}
+                    >
                       minutes
                     </p>
                   </div>
@@ -196,13 +253,11 @@ const SettingsModal = ({
                     type="button"
                     onClick={() => changeFocus(1)}
                     disabled={draftFocus >= 180}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/7 bg-white/2.5 text-zinc-500 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Plus size={16} />
                   </button>
                 </div>
-
-                {/* Slider */}
 
                 <input
                   type="range"
@@ -211,10 +266,12 @@ const SettingsModal = ({
                   step="1"
                   value={draftFocus}
                   onChange={(e) => updateFocus(e.target.value)}
-                  className="w-full cursor-pointer accent-white"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full accent-orange-500"
                 />
 
-                <div className="mt-2 flex justify-between text-[10px] text-zinc-700">
+                <div
+                  className={`mt-2 flex justify-between text-[9px] font-medium ${colors.muted}`}
+                >
                   <span>1 min</span>
                   <span>3 hours</span>
                 </div>
@@ -223,44 +280,50 @@ const SettingsModal = ({
 
             {/* Break Duration */}
 
-            <section>
-              <div className="mb-5">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-white">
-                      Break duration
-                    </h3>
+            <section className={`rounded-[28px] border p-5 ${colors.card}`}>
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className={`text-sm font-bold ${colors.text}`}>
+                    Break duration
+                  </p>
 
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Set your own break length.
-                    </p>
-                  </div>
-
-                  <span className="font-num text-lg font-semibold text-white">
-                    {formatMinutes(draftBreak)}
-                  </span>
+                  <p className={`mt-1 text-xs ${colors.muted}`}>
+                    Set your own break length.
+                  </p>
                 </div>
+
+                <span
+                  className={`font-num whitespace-nowrap text-lg font-semibold ${colors.text}`}
+                >
+                  {formatMinutes(draftBreak)}
+                </span>
               </div>
 
-              <div className="rounded-2xl border border-white/6 bg-[#151517] p-5">
-                {/* Number controls */}
-
-                <div className="mb-6 flex items-center justify-between">
+              <div
+                className={`rounded-[24px] border p-4 sm:p-5 ${colors.border} ${
+                  isDark ? "bg-white/[0.02]" : "bg-[#F6FAFC]"
+                }`}
+              >
+                <div className="mb-5 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => changeBreak(-1)}
                     disabled={draftBreak <= 1}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/7 bg-white/2.5 text-zinc-500 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Minus size={16} />
                   </button>
 
                   <div className="text-center">
-                    <p className="font-num text-4xl font-semibold tracking-tighter text-white">
+                    <p
+                      className={`font-num text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
+                    >
                       {draftBreak}
                     </p>
 
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                    <p
+                      className={`mt-1 text-[9px] font-bold uppercase tracking-[0.16em] ${colors.muted}`}
+                    >
                       minutes
                     </p>
                   </div>
@@ -269,13 +332,11 @@ const SettingsModal = ({
                     type="button"
                     onClick={() => changeBreak(1)}
                     disabled={draftBreak >= 60}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/7 bg-white/2.5 text-zinc-500 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Plus size={16} />
                   </button>
                 </div>
-
-                {/* Slider */}
 
                 <input
                   type="range"
@@ -284,26 +345,28 @@ const SettingsModal = ({
                   step="1"
                   value={draftBreak}
                   onChange={(e) => updateBreak(e.target.value)}
-                  className="w-full cursor-pointer accent-white"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full accent-sky-500"
                 />
 
-                <div className="mt-2 flex justify-between text-[10px] text-zinc-700">
+                <div
+                  className={`mt-2 flex justify-between text-[9px] font-medium ${colors.muted}`}
+                >
                   <span>1 min</span>
                   <span>1 hour</span>
                 </div>
               </div>
             </section>
 
-            {/* Quick presets */}
+            {/* Quick Presets */}
 
-            <section>
-              <div className="mb-3">
-                <h3 className="text-sm font-medium text-white">
+            <section className={`rounded-[28px] border p-5 ${colors.card}`}>
+              <div className="mb-4">
+                <p className={`text-sm font-bold ${colors.text}`}>
                   Quick presets
-                </h3>
+                </p>
 
-                <p className="mt-1 text-xs text-zinc-600">
-                  Or jump straight to a common setup.
+                <p className={`mt-1 text-xs ${colors.muted}`}>
+                  Jump straight to a common setup.
                 </p>
               </div>
 
@@ -325,13 +388,21 @@ const SettingsModal = ({
                         updateFocus(preset.focus);
                         updateBreak(preset.break);
                       }}
-                      className={`rounded-xl border px-3 py-3 text-xs font-medium transition ${
+                      className={`rounded-2xl border px-3 py-3.5 text-xs font-bold transition active:scale-[0.98] ${
                         active
-                          ? "border-white/10 bg-white text-black"
-                          : "border-white/6 bg-white/2 text-zinc-500 hover:bg-white/5 hover:text-white"
+                          ? isDark
+                            ? "border-orange-400/20 bg-orange-500/10 text-orange-400"
+                            : "border-orange-200 bg-[#FCE2D8] text-orange-600"
+                          : `${colors.border} ${
+                              isDark
+                                ? "bg-white/[0.02] text-zinc-500 hover:bg-white/[0.05] hover:text-white"
+                                : "bg-[#FAF9F6] text-zinc-500 hover:bg-white hover:text-black"
+                            }`
                       }`}
                     >
-                      {preset.label}
+                      <span className="font-num">{preset.focus}</span>
+                      <span className={colors.muted}> / </span>
+                      <span className="font-num">{preset.break}</span>
                     </button>
                   );
                 })}
@@ -342,11 +413,15 @@ const SettingsModal = ({
 
         {/* Footer */}
 
-        <div className="shrink-0 border-t border-white/6 px-6 py-5 sm:px-7">
+        <div className={`shrink-0 border-t px-5 py-5 sm:px-7 ${colors.border}`}>
           <button
             type="button"
             onClick={handleClose}
-            className="w-full rounded-xl bg-white py-3.5 text-sm font-medium text-black transition hover:bg-zinc-200"
+            className={`w-full rounded-2xl py-3.5 text-xs font-bold transition active:scale-[0.99] ${
+              isDark
+                ? "bg-white text-black hover:bg-zinc-200"
+                : "bg-[#171918] text-white hover:bg-black"
+            }`}
           >
             Done
           </button>

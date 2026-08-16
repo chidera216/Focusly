@@ -26,20 +26,21 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3 md:hidden">
       <div
         className="
           mx-auto
           flex
-          h-18
-          max-w-sm
+          h-[68px]
+          w-full
+          max-w-[390px]
           items-center
-          rounded-2xl
+          rounded-[22px]
           border
-          border-white/8
-          bg-[#101012]/95
-          px-2
-          shadow-[0_12px_45px_rgba(0,0,0,0.45)]
+          border-white/[0.07]
+          bg-[#111113]/95
+          px-1.5
+          shadow-[0_18px_50px_rgba(0,0,0,0.5)]
           backdrop-blur-2xl
         "
       >
@@ -53,41 +54,43 @@ const BottomNav = () => {
               className="group flex h-full flex-1 items-center justify-center"
             >
               {({ isActive }) => (
-                <div className="relative flex w-full items-center justify-center">
+                <div className="relative flex h-full w-full items-center justify-center">
                   <div
                     className={`
                       flex
-                      min-w-14.5
+                      min-w-[58px]
                       flex-col
                       items-center
-                      gap-1.5
+                      justify-center
+                      gap-1
                       transition-all
                       duration-200
                       ${
                         isActive
                           ? "text-white"
-                          : "text-zinc-600 group-hover:text-zinc-300"
+                          : "text-zinc-600 group-hover:text-zinc-400"
                       }
                     `}
                   >
                     <div
                       className={`
+                        relative
                         flex
                         h-9
                         w-9
                         items-center
                         justify-center
-                        rounded-xl
+                        rounded-[12px]
                         transition-all
                         duration-200
                         ${
                           isActive
-                            ? "bg-white text-black shadow-[0_4px_15px_rgba(255,255,255,0.12)]"
-                            : "bg-transparent"
+                            ? "bg-white text-[#111113] shadow-[0_4px_18px_rgba(255,255,255,0.08)]"
+                            : "bg-transparent group-hover:bg-white/[0.035]"
                         }
                       `}
                     >
-                      <Icon size={18} strokeWidth={isActive ? 2.1 : 1.7} />
+                      <Icon size={17} strokeWidth={isActive ? 2.15 : 1.65} />
                     </div>
 
                     <span
@@ -95,6 +98,7 @@ const BottomNav = () => {
                         text-[9px]
                         font-medium
                         leading-none
+                        tracking-[-0.01em]
                         ${
                           isActive
                             ? "text-zinc-200"
@@ -110,11 +114,11 @@ const BottomNav = () => {
                     <span
                       className="
                         absolute
-                        -bottom-1
-                        h-0.5
-                        w-4
+                        bottom-[5px]
+                        h-1
+                        w-1
                         rounded-full
-                        bg-white/80
+                        bg-white
                       "
                     />
                   )}
