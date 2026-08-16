@@ -7,10 +7,9 @@ const Stats = () => {
   const [range, setRange] = useState("week");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const [theme] = useState(() => {
-    return localStorage.getItem("theme") || "dark";
-  });
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "dark",
+  );
 
   const isDark = theme === "dark";
 
@@ -21,43 +20,90 @@ const Stats = () => {
     { label: "This year", value: "year" },
   ];
 
+  /*
+   * ------------------------------------------------------------
+   * THEME
+   * ------------------------------------------------------------
+   */
+
   useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem("theme") || "dark");
+    };
+
+    window.addEventListener("themeChanged", handleThemeChange);
+
+    return () => {
+      window.removeEventListener("themeChanged", handleThemeChange);
+    };
+  }, []);
+
+  /*
+   * ------------------------------------------------------------
+   * FETCH STATS
+   * ------------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
     const fetchStats = async () => {
+      setLoading(true);
+
       try {
-        setLoading(true);
+        const response = await api.get(`/sessions/stats/${range}`);
 
-        const res = await api.get(`/sessions/stats/${range}`);
-
-        setStats(res.data);
+        if (!cancelled) {
+          setStats(response.data);
+        }
       } catch (error) {
-        console.log("Statistics error:", error.response?.data || error.message);
+        if (!cancelled) {
+          console.error(
+            "Statistics error:",
+            error.response?.data || error.message,
+          );
+
+          setStats(null);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStats();
+
+    return () => {
+      cancelled = true;
+    };
   }, [range]);
 
-  const formatTime = (minutes) => {
-    const numericMinutes = Number(minutes) || 0;
+  /*
+   * ------------------------------------------------------------
+   * FORMATTERS
+   * ------------------------------------------------------------
+   */
 
-    if (numericMinutes < 60) {
-      return `${numericMinutes.toFixed(0)} min`;
+  const formatTime = (minutes) => {
+    const value = Number(minutes) || 0;
+
+    if (value < 60) {
+      return `${Math.round(value)} min`;
     }
 
-    return `${(numericMinutes / 60).toFixed(1)} hrs`;
+    return `${(value / 60).toFixed(1)} hrs`;
   };
 
   const formatDetailedTime = (minutes) => {
-    const numericMinutes = Number(minutes) || 0;
+    const value = Number(minutes) || 0;
 
-    if (numericMinutes < 60) {
-      return `${numericMinutes.toFixed(0)} min`;
+    if (value < 60) {
+      return `${Math.round(value)} min`;
     }
 
-    const hours = Math.floor(numericMinutes / 60);
-    const remainingMinutes = Math.round(numericMinutes % 60);
+    const hours = Math.floor(value / 60);
+    const remainingMinutes = Math.round(value % 60);
 
     if (remainingMinutes === 0) {
       return `${hours} hr`;
@@ -66,24 +112,36 @@ const Stats = () => {
     return `${hours} hr ${remainingMinutes} min`;
   };
 
+  /*
+   * ------------------------------------------------------------
+   * DATA
+   * ------------------------------------------------------------
+   */
+
   const totalMinutes = Number(stats?.totalMinutes) || 0;
 
   const taskStats = useMemo(() => {
-    if (!stats?.taskStats) return [];
+    if (!Array.isArray(stats?.taskStats)) {
+      return [];
+    }
 
-    return [...stats.taskStats].sort(
-      (a, b) => Number(b.totalMinutes) - Number(a.totalMinutes),
-    );
+    return [...stats.taskStats]
+      .map((task) => ({
+        ...task,
+        totalMinutes: Number(task.totalMinutes) || 0,
+      }))
+      .sort((a, b) => b.totalMinutes - a.totalMinutes);
   }, [stats]);
 
-  const topTask = taskStats[0];
+  const topTask = taskStats[0] || null;
 
-  const averageTaskMinutes =
-    taskStats.length > 0 ? totalMinutes / taskStats.length : 0;
+  const taskCount = taskStats.length;
+
+  const averageTaskMinutes = taskCount > 0 ? totalMinutes / taskCount : 0;
 
   /*
    * ------------------------------------------------------------
-   * THEME
+   * THEME CLASSES
    * ------------------------------------------------------------
    */
 
@@ -203,9 +261,9 @@ const Stats = () => {
               className={`mb-6 flex items-center gap-3 border-b border-t px-1 py-3 text-xs ${borderClass} ${mutedText}`}
             >
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
+                className={`h-1.5 w-1.5 animate-pulse rounded-full ${
                   isDark ? "bg-zinc-400" : "bg-zinc-500"
-                } animate-pulse`}
+                }`}
               />
               Updating statistics...
             </div>
@@ -213,9 +271,7 @@ const Stats = () => {
 
           {stats ? (
             <>
-              {/* ==================================================
-                  SUMMARY
-              ================================================== */}
+              {/* SUMMARY */}
 
               <div
                 className={`overflow-hidden rounded-xl border ${panelClass}`}
@@ -257,7 +313,7 @@ const Stats = () => {
                     <p
                       className={`mt-3 font-num text-3xl font-semibold tracking-[-0.055em] ${primaryText}`}
                     >
-                      {taskStats.length}
+                      {taskCount}
                     </p>
 
                     <p className={`mt-1.5 text-xs ${mutedText}`}>
@@ -309,9 +365,7 @@ const Stats = () => {
                 </div>
               </div>
 
-              {/* ==================================================
-                  TABLE
-              ================================================== */}
+              {/* TABLE */}
 
               <div
                 className={`mt-8 overflow-hidden rounded-xl border ${panelClass}`}
@@ -401,19 +455,17 @@ const Stats = () => {
 
                         <tbody>
                           {taskStats.map((task, index) => {
-                            const taskMinutes = Number(task.totalMinutes) || 0;
-
                             const percentage =
                               totalMinutes > 0
                                 ? Math.min(
                                     100,
-                                    (taskMinutes / totalMinutes) * 100,
+                                    (task.totalMinutes / totalMinutes) * 100,
                                   )
                                 : 0;
 
                             return (
                               <tr
-                                key={task.taskId}
+                                key={task.taskId || task.title || index}
                                 className={`group border-b last:border-b-0 ${borderClass} ${tableHoverClass}`}
                               >
                                 <td className="px-6 py-5">
@@ -434,7 +486,7 @@ const Stats = () => {
                                         : "text-[#33332F] group-hover:text-[#111]"
                                     }`}
                                   >
-                                    {task.title}
+                                    {task.title || "Untitled task"}
                                   </p>
 
                                   <p
@@ -452,7 +504,7 @@ const Stats = () => {
                                         : "text-[#454540]"
                                     }`}
                                   >
-                                    {formatDetailedTime(taskMinutes)}
+                                    {formatDetailedTime(task.totalMinutes)}
                                   </span>
                                 </td>
 
@@ -495,15 +547,19 @@ const Stats = () => {
 
                     <div className={`divide-y md:hidden ${borderClass}`}>
                       {taskStats.map((task, index) => {
-                        const taskMinutes = Number(task.totalMinutes) || 0;
-
                         const percentage =
                           totalMinutes > 0
-                            ? Math.min(100, (taskMinutes / totalMinutes) * 100)
+                            ? Math.min(
+                                100,
+                                (task.totalMinutes / totalMinutes) * 100,
+                              )
                             : 0;
 
                         return (
-                          <div key={task.taskId} className="px-5 py-5">
+                          <div
+                            key={task.taskId || task.title || index}
+                            className="px-5 py-5"
+                          >
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex min-w-0 items-start gap-3">
                                 <span
@@ -520,7 +576,7 @@ const Stats = () => {
                                         : "text-[#33332F]"
                                     }`}
                                   >
-                                    {task.title}
+                                    {task.title || "Untitled task"}
                                   </p>
 
                                   <p
@@ -534,7 +590,7 @@ const Stats = () => {
                               <p
                                 className={`shrink-0 font-num text-sm font-medium ${secondaryText}`}
                               >
-                                {formatDetailedTime(taskMinutes)}
+                                {formatDetailedTime(task.totalMinutes)}
                               </p>
                             </div>
 
@@ -556,13 +612,11 @@ const Stats = () => {
                 )}
               </div>
 
-              {/* ==================================================
-                  INSIGHT
-              ================================================== */}
+              {/* INSIGHT */}
 
               {topTask && (
                 <div
-                  className={`mt-6 border-t border-b px-1 py-5 ${borderClass}`}
+                  className={`mt-6 border-b border-t px-1 py-5 ${borderClass}`}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
