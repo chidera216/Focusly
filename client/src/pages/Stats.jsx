@@ -220,9 +220,8 @@ const Stats = () => {
           {/* ==================================================
               RANGE SWITCHER
           ================================================== */}
-
           <div
-            className={`mb-6 flex w-full overflow-x-auto rounded-[22px] border p-1.5 sm:w-fit ${cardBase} ${
+            className={`mb-6 flex w-full flex-wrap items-center gap-1.5 rounded-[22px] border p-1.5 sm:w-fit ${cardBase} ${
               isDark ? "bg-[#19191C]" : "bg-white"
             }`}
           >
@@ -234,7 +233,7 @@ const Stats = () => {
                   key={item.value}
                   type="button"
                   onClick={() => setRange(item.value)}
-                  className={`whitespace-nowrap rounded-[16px] px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                  className={`flex-1 rounded-[16px] px-4 py-2.5 text-xs font-semibold transition-all duration-200 sm:flex-none ${
                     active
                       ? isDark
                         ? "bg-white text-black shadow-sm"
