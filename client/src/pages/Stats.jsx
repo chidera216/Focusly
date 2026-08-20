@@ -318,9 +318,7 @@ const Stats = () => {
                         Total focus
                       </span>
 
-                      <span
-                        className={`font-num text-xs font-semibold ${primaryText}`}
-                      >
+                      <span className={` text-xs font-semibold ${primaryText}`}>
                         {formatLargeTime(totalMinutes)}
                       </span>
                     </div>
@@ -393,7 +391,7 @@ const Stats = () => {
                     </p>
 
                     <p
-                      className={`mt-2 font-num text-5xl font-bold tracking-[-0.07em] sm:text-6xl ${primaryText}`}
+                      className={`mt-2 text-5xl font-bold tracking-[0.005em] sm:text-6xl ${primaryText}`}
                     >
                       {formatLargeTime(totalMinutes)}
                     </p>
@@ -481,7 +479,7 @@ const Stats = () => {
                     </p>
 
                     <p
-                      className={`mt-1 font-num text-5xl font-bold tracking-[-0.07em] ${primaryText}`}
+                      className={`mt-1 text-5xl font-bold tracking-[-0.07em] ${primaryText}`}
                     >
                       {taskCount}
                     </p>
@@ -521,7 +519,7 @@ const Stats = () => {
                     </p>
 
                     <p
-                      className={`mt-1 font-num text-5xl font-bold tracking-[-0.07em] ${primaryText}`}
+                      className={`mt-1 text-5xl font-bold tracking-[-0.07em] ${primaryText}`}
                     >
                       {formatTime(averageTaskMinutes)}
                     </p>

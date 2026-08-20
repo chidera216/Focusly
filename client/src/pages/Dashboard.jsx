@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+
 import {
   Settings,
   Play,
@@ -14,33 +15,90 @@ import Sidebar from "../components/Sidebar";
 import SettingsModal from "../components/SettingModal";
 import api from "../service/api";
 
+const TIMER_STORAGE_KEY = "pomodoroTimer";
+
+const getSavedTimer = () => {
+  const saved = localStorage.getItem(TIMER_STORAGE_KEY);
+
+  if (!saved) return null;
+
+  try {
+    return JSON.parse(saved);
+  } catch {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+    return null;
+  }
+};
+
+const getStoredNumber = (key, fallback) => {
+  const value = Number(localStorage.getItem(key));
+
+  return value > 0 ? value : fallback;
+};
+
 const Dashboard = ({ isInstalled, onInstall }) => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  /*
+   * ============================================================
+   * TIMER SETTINGS
+   * ============================================================
+   */
 
-  // ============================================================
-  // TIMER SETTINGS
-  // ============================================================
+  const [focusMinutes, setFocusMinutes] = useState(() =>
+    getStoredNumber("focusMinutes", 25),
+  );
 
-  const [focusMinutes, setFocusMinutes] = useState(() => {
-    const saved = Number(localStorage.getItem("focusMinutes"));
-    return saved > 0 ? saved : 25;
-  });
-
-  const [breakMinutes, setBreakMinutes] = useState(() => {
-    const saved = Number(localStorage.getItem("breakMinutes"));
-    return saved > 0 ? saved : 8;
-  });
+  const [breakMinutes, setBreakMinutes] = useState(() =>
+    getStoredNumber("breakMinutes", 8),
+  );
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("theme") || "dark";
   });
 
-  const [mode, setMode] = useState("focus");
+  /*
+   * ============================================================
+   * TIMER STATE
+   * ============================================================
+   */
 
-  // ============================================================
-  // SELECTED TASK
-  // ============================================================
+  const [isRunning, setIsRunning] = useState(() => {
+    const savedTimer = getSavedTimer();
+
+    return savedTimer?.isRunning === true;
+  });
+
+  const [mode, setMode] = useState(() => {
+    const savedTimer = getSavedTimer();
+
+    return savedTimer?.mode || "focus";
+  });
+
+  const getDurationForMode = useCallback(
+    (currentMode = mode) => {
+      if (currentMode === "focus") {
+        return focusMinutes * 60;
+      }
+
+      return breakMinutes * 60;
+    },
+    [mode, focusMinutes, breakMinutes],
+  );
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedTimer = getSavedTimer();
+
+    if (savedTimer?.timeLeft > 0) {
+      return savedTimer.timeLeft;
+    }
+
+    return getStoredNumber("focusMinutes", 25) * 60;
+  });
+
+  /*
+   * ============================================================
+   * SELECTED TASK
+   * ============================================================
+   */
 
   const [selectedTask, setSelectedTask] = useState(() => {
     const savedTask = localStorage.getItem("selectedTask");
@@ -54,35 +112,51 @@ const Dashboard = ({ isInstalled, onInstall }) => {
     }
   });
 
-  // ============================================================
-  // CURRENT TIMER
-  // ============================================================
+  /*
+   * ============================================================
+   * USER NAME
+   *
+   * The dashboard reads the name from localStorage so different
+   * users don't all see the same hard-coded greeting.
+   *
+   * Change the storage key here if your settings use another key.
+   * ============================================================
+   */
 
-  const getDurationForMode = (currentMode = mode) => {
-    if (currentMode === "focus") {
-      return focusMinutes * 60;
-    }
-
-    return breakMinutes * 60;
-  };
-
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const saved = Number(localStorage.getItem("focusMinutes"));
-    return (saved > 0 ? saved : 25) * 60;
+  const [userName, setUserName] = useState(() => {
+    return (
+      localStorage.getItem("userName") ||
+      localStorage.getItem("name") ||
+      localStorage.getItem("username") ||
+      ""
+    );
   });
 
-  // ============================================================
-  // THEME
-  // ============================================================
+  /*
+   * ============================================================
+   * SETTINGS MODAL
+   * ============================================================
+   */
+
+  const [showSettings, setShowSettings] = useState(false);
+
+  /*
+   * ============================================================
+   * THEME
+   * ============================================================
+   */
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
+
     window.dispatchEvent(new Event("themeChanged"));
   }, [theme]);
 
-  // ============================================================
-  // SAVE TIMER SETTINGS
-  // ============================================================
+  /*
+   * ============================================================
+   * SAVE TIMER SETTINGS
+   * ============================================================
+   */
 
   useEffect(() => {
     localStorage.setItem("focusMinutes", String(focusMinutes));
@@ -92,9 +166,89 @@ const Dashboard = ({ isInstalled, onInstall }) => {
     localStorage.setItem("breakMinutes", String(breakMinutes));
   }, [breakMinutes]);
 
-  // ============================================================
-  // SELECTED TASK CHANGE
-  // ============================================================
+  /*
+   * ============================================================
+   * SYNC SETTINGS FROM SETTINGS MODAL
+   *
+   * This is important when another component changes settings.
+   * ============================================================
+   */
+
+  useEffect(() => {
+    const handleSettingsChange = () => {
+      const savedFocusMinutes = getStoredNumber("focusMinutes", 25);
+      const savedBreakMinutes = getStoredNumber("breakMinutes", 8);
+      const savedTheme = localStorage.getItem("theme") || "dark";
+
+      setFocusMinutes(savedFocusMinutes);
+      setBreakMinutes(savedBreakMinutes);
+      setTheme(savedTheme);
+
+      /*
+       * Only reset the displayed timer if the timer isn't currently
+       * running. This prevents changing settings from destroying
+       * an active session.
+       */
+      if (!isRunning) {
+        const newDuration =
+          mode === "focus" ? savedFocusMinutes * 60 : savedBreakMinutes * 60;
+
+        setTimeLeft(newDuration);
+
+        localStorage.setItem(
+          TIMER_STORAGE_KEY,
+          JSON.stringify({
+            isRunning: false,
+            mode,
+            timeLeft: newDuration,
+          }),
+        );
+      }
+    };
+
+    window.addEventListener("timerSettingsChanged", handleSettingsChange);
+
+    return () => {
+      window.removeEventListener("timerSettingsChanged", handleSettingsChange);
+    };
+  }, [mode, isRunning]);
+
+  /*
+   * ============================================================
+   * SYNC USER NAME
+   * ============================================================
+   */
+
+  useEffect(() => {
+    const handleUserSettingsChange = () => {
+      const savedName =
+        localStorage.getItem("userName") ||
+        localStorage.getItem("name") ||
+        localStorage.getItem("username") ||
+        "";
+
+      setUserName(savedName);
+    };
+
+    window.addEventListener("userSettingsChanged", handleUserSettingsChange);
+
+    window.addEventListener("settingsChanged", handleUserSettingsChange);
+
+    return () => {
+      window.removeEventListener(
+        "userSettingsChanged",
+        handleUserSettingsChange,
+      );
+
+      window.removeEventListener("settingsChanged", handleUserSettingsChange);
+    };
+  }, []);
+
+  /*
+   * ============================================================
+   * SELECTED TASK CHANGE
+   * ============================================================
+   */
 
   useEffect(() => {
     const handleTaskChange = () => {
@@ -111,7 +265,19 @@ const Dashboard = ({ isInstalled, onInstall }) => {
         setSelectedTask(null);
         setMode("focus");
         setIsRunning(false);
-        setTimeLeft(focusMinutes * 60);
+
+        const duration = focusMinutes * 60;
+
+        setTimeLeft(duration);
+
+        localStorage.setItem(
+          TIMER_STORAGE_KEY,
+          JSON.stringify({
+            isRunning: false,
+            mode: "focus",
+            timeLeft: duration,
+          }),
+        );
       }
     };
 
@@ -122,40 +288,11 @@ const Dashboard = ({ isInstalled, onInstall }) => {
     };
   }, [focusMinutes]);
 
-  // ============================================================
-  // TIMER SETTINGS CHANGED
-  // ============================================================
-
-  useEffect(() => {
-    const handleSettingsChange = () => {
-      const savedFocusMinutes =
-        Number(localStorage.getItem("focusMinutes")) || 25;
-
-      const savedBreakMinutes =
-        Number(localStorage.getItem("breakMinutes")) || 8;
-
-      setFocusMinutes(savedFocusMinutes);
-      setBreakMinutes(savedBreakMinutes);
-
-      if (!isRunning) {
-        if (mode === "focus") {
-          setTimeLeft(savedFocusMinutes * 60);
-        } else {
-          setTimeLeft(savedBreakMinutes * 60);
-        }
-      }
-    };
-
-    window.addEventListener("timerSettingsChanged", handleSettingsChange);
-
-    return () => {
-      window.removeEventListener("timerSettingsChanged", handleSettingsChange);
-    };
-  }, [isRunning, mode]);
-
-  // ============================================================
-  // SAVE SESSION
-  // ============================================================
+  /*
+   * ============================================================
+   * SAVE SESSION
+   * ============================================================
+   */
 
   const saveSession = useCallback(
     async (focusDuration) => {
@@ -177,45 +314,82 @@ const Dashboard = ({ isInstalled, onInstall }) => {
     [selectedTask],
   );
 
-  // ============================================================
-  // TIMER
-  // ============================================================
+  /*
+   * ============================================================
+   * TIMER
+   * ============================================================
+   */
 
   useEffect(() => {
     if (!isRunning) return;
 
-    const interval = setInterval(() => {
-      setTimeLeft((previous) => {
-        if (previous > 1) {
-          return previous - 1;
-        }
+    const updateTimer = () => {
+      const savedTimer = getSavedTimer();
 
-        clearInterval(interval);
+      if (!savedTimer?.isRunning || !savedTimer?.endTime) {
+        return;
+      }
 
+      const remaining = Math.max(
+        0,
+        Math.ceil((savedTimer.endTime - Date.now()) / 1000),
+      );
+
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
         setIsRunning(false);
+
+        localStorage.removeItem(TIMER_STORAGE_KEY);
 
         if (mode === "focus") {
           saveSession(focusMinutes * 60);
 
-          setMode("short-break");
-          setTimeLeft(breakMinutes * 60);
+          const nextMode = "short-break";
+          const nextTime = breakMinutes * 60;
 
-          return 0;
+          setMode(nextMode);
+          setTimeLeft(nextTime);
+
+          localStorage.setItem(
+            TIMER_STORAGE_KEY,
+            JSON.stringify({
+              isRunning: false,
+              mode: nextMode,
+              timeLeft: nextTime,
+            }),
+          );
+        } else {
+          const nextMode = "focus";
+          const nextTime = focusMinutes * 60;
+
+          setMode(nextMode);
+          setTimeLeft(nextTime);
+
+          localStorage.setItem(
+            TIMER_STORAGE_KEY,
+            JSON.stringify({
+              isRunning: false,
+              mode: nextMode,
+              timeLeft: nextTime,
+            }),
+          );
         }
+      }
+    };
 
-        setMode("focus");
-        setTimeLeft(focusMinutes * 60);
+    updateTimer();
 
-        return 0;
-      });
-    }, 1000);
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
   }, [isRunning, mode, focusMinutes, breakMinutes, saveSession]);
 
-  // ============================================================
-  // TIMER VALUES
-  // ============================================================
+  /*
+   * ============================================================
+   * TIMER VALUES
+   * ============================================================
+   */
 
   const totalTime = getDurationForMode();
 
@@ -226,9 +400,11 @@ const Dashboard = ({ isInstalled, onInstall }) => {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  // ============================================================
-  // MODE
-  // ============================================================
+  /*
+   * ============================================================
+   * MODE
+   * ============================================================
+   */
 
   const modeTitle = mode === "focus" ? "Focus session" : "Break";
 
@@ -237,42 +413,78 @@ const Dashboard = ({ isInstalled, onInstall }) => {
       ? selectedTask?.title || "What do you want to work on?"
       : "Take a break and recharge.";
 
-  // ============================================================
-  // RESET
-  // ============================================================
+  /*
+   * ============================================================
+   * TOGGLE TIMER
+   * ============================================================
+   */
+
+  const handleToggleTimer = () => {
+    if (isRunning) {
+      /*
+       * Pause
+       */
+
+      localStorage.setItem(
+        TIMER_STORAGE_KEY,
+        JSON.stringify({
+          isRunning: false,
+          mode,
+          timeLeft,
+        }),
+      );
+
+      setIsRunning(false);
+
+      return;
+    }
+
+    /*
+     * Start
+     */
+
+    const endTime = Date.now() + timeLeft * 1000;
+
+    localStorage.setItem(
+      TIMER_STORAGE_KEY,
+      JSON.stringify({
+        isRunning: true,
+        mode,
+        endTime,
+      }),
+    );
+
+    setIsRunning(true);
+  };
+
+  /*
+   * ============================================================
+   * RESET TIMER
+   * ============================================================
+   */
 
   const handleReset = () => {
     setIsRunning(false);
-    setTimeLeft(getDurationForMode());
+
+    const resetTime = getDurationForMode();
+
+    setTimeLeft(resetTime);
+
+    localStorage.setItem(
+      TIMER_STORAGE_KEY,
+      JSON.stringify({
+        isRunning: false,
+        mode,
+        timeLeft: resetTime,
+      }),
+    );
   };
 
-  // ============================================================
-  // MANUAL TIMER CHANGE
-  // ============================================================
-
-  const handleFocusMinutesChange = (value) => {
-    const minutes = Number(value);
-
-    setFocusMinutes(minutes);
-
-    if (!isRunning && mode === "focus") {
-      setTimeLeft(minutes * 60);
-    }
-  };
-
-  const handleBreakMinutesChange = (value) => {
-    const minutes = Number(value);
-
-    setBreakMinutes(minutes);
-
-    if (!isRunning && mode !== "focus") {
-      setTimeLeft(minutes * 60);
-    }
-  };
-
-  // ============================================================
-  // THEME
-  // ============================================================
+  /*
+   * ============================================================
+   * THEME CLASSES
+   * ============================================================
+   */
 
   const isDark = theme === "dark";
 
@@ -296,9 +508,19 @@ const Dashboard = ({ isInstalled, onInstall }) => {
     ? "border-white/[0.06] bg-[#171719]"
     : "border-black/[0.06] bg-white";
 
-  // ============================================================
-  // RENDER
-  // ============================================================
+  /*
+   * ============================================================
+   * PERSONALIZED GREETING
+   * ============================================================
+   */
+
+  const greeting = userName ? `Hi, ${userName}!` : "Hi, Productive Friend!";
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <div
@@ -307,9 +529,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
       <Sidebar />
 
       <main className="min-h-screen w-full pb-24 md:pl-60">
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
+        {/* HEADER */}
 
         <header
           className={`sticky top-0 z-30 border-b backdrop-blur-xl ${borderClass} ${
@@ -347,24 +567,24 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                   type="button"
                   onClick={onInstall}
                   className={`
-  hidden
-  h-9
-  items-center
-  rounded-xl
-  border
-  px-3.5
-  text-xs
-  font-medium
-  transition-all
-  duration-200
-  sm:flex
-  ${borderClass}
-  ${
-    isDark
-      ? "bg-white/[0.035] text-zinc-400 hover:border-white/[0.12] hover:bg-white/[0.07] hover:text-white"
-      : "bg-white text-zinc-600 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
-  }
-`}
+                    hidden
+                    h-9
+                    items-center
+                    rounded-xl
+                    border
+                    px-3.5
+                    text-xs
+                    font-medium
+                    transition-all
+                    duration-200
+                    sm:flex
+                    ${borderClass}
+                    ${
+                      isDark
+                        ? "bg-white/[0.035] text-zinc-400 hover:border-white/[0.12] hover:bg-white/[0.07] hover:text-white"
+                        : "bg-white text-zinc-600 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
+                    }
+                  `}
                 >
                   Install
                 </button>
@@ -386,14 +606,10 @@ const Dashboard = ({ isInstalled, onInstall }) => {
           </div>
         </header>
 
-        {/* =====================================================
-            MAIN BENTO CONTENT
-        ====================================================== */}
+        {/* MAIN CONTENT */}
 
         <section className="mx-auto w-full max-w-6xl px-4 py-6 pb-28 sm:px-7 sm:py-8 md:px-10">
-          {/* ===================================================
-              TOP BANNER
-          ==================================================== */}
+          {/* TOP BANNER */}
 
           <div
             className={`relative mb-4 overflow-hidden rounded-[32px] border p-6 sm:p-8 ${mainCard}`}
@@ -423,7 +639,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                 <h1
                   className={`max-w-2xl text-3xl font-bold leading-[1.05] tracking-[-0.05em] sm:text-4xl ${primaryText}`}
                 >
-                  {selectedTask?.title || "Hi, Productive Friend!"}
+                  {selectedTask?.title || greeting}
                 </h1>
 
                 <p
@@ -433,7 +649,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                 </p>
               </div>
 
-              {/* Current pace */}
+              {/* CURRENT PACE */}
 
               <div
                 className={`flex shrink-0 items-center gap-4 rounded-[24px] border px-5 py-4 ${borderClass} ${
@@ -468,20 +684,14 @@ const Dashboard = ({ isInstalled, onInstall }) => {
             </div>
           </div>
 
-          {/* ===================================================
-              MAIN BENTO GRID
-          ==================================================== */}
+          {/* MAIN BENTO GRID */}
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            {/* =================================================
-                TIMER CARD
-            ================================================== */}
+            {/* TIMER CARD */}
 
             <div
               className={`relative min-h-[600px] overflow-hidden rounded-[32px] border ${mainCard}`}
             >
-              {/* Background blobs */}
-
               <div
                 className={`pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full blur-3xl ${
                   isDark ? "bg-orange-500/[0.08]" : "bg-orange-300/[0.18]"
@@ -495,7 +705,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
               />
 
               <div className="relative flex min-h-[600px] flex-col items-center justify-center px-5 py-10">
-                {/* Status */}
+                {/* STATUS */}
 
                 <div
                   className={`absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] ${borderClass} ${
@@ -517,13 +727,9 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                   {isRunning ? "In progress" : "Ready"}
                 </div>
 
-                {/* =================================================
-                    FLAME TIMER
-                ================================================== */}
+                {/* FLAME TIMER */}
 
-                <div className="relative mt-8 flex h-[280px] w-[220px] items-end justify-center">
-                  {/* Outer glow */}
-
+                <div className="relative mt-8 flex h-[230px] w-[180px] items-end justify-center">
                   <div
                     className={`absolute bottom-0 rounded-full blur-[60px] transition-all duration-1000 ${
                       isRunning ? "bg-orange-500/30" : "bg-orange-500/10"
@@ -534,8 +740,6 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                     }}
                   />
 
-                  {/* Inner glow */}
-
                   <div
                     className={`absolute bottom-6 rounded-full blur-[35px] transition-all duration-1000 ${
                       isRunning ? "bg-yellow-400/30" : "bg-yellow-400/10"
@@ -545,8 +749,6 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                       height: `${70 + progress * 70}px`,
                     }}
                   />
-
-                  {/* Flame */}
 
                   <div
                     className={`relative z-10 h-[275px] w-[205px] transition-all duration-1000 ease-out ${
@@ -611,8 +813,6 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                         </filter>
                       </defs>
 
-                      {/* Outer flame */}
-
                       <path
                         d="
                           M60 158
@@ -630,8 +830,6 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                         filter="url(#dashboardFlameGlow)"
                       />
 
-                      {/* Inner flame */}
-
                       <path
                         d="
                           M61 150
@@ -645,8 +843,6 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                         "
                         fill="url(#dashboardInnerFlame)"
                       />
-
-                      {/* Core */}
 
                       <path
                         d="
@@ -663,10 +859,10 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                   </div>
                 </div>
 
-                {/* Timer */}
+                {/* TIMER */}
 
                 <div
-                  className={`mt-2 whitespace-nowrap text-[clamp(4.8rem,10vw,7.4rem)] font-num leading-none tracking-[-0.09em] ${primaryText}`}
+                  className={`mt-2 whitespace-nowrap text-[clamp(4.8rem,10vw,7.4rem)] font-bold leading-none tracking-[-0.04em] ${primaryText}`}
                 >
                   {String(minutes).padStart(2, "0")}
 
@@ -681,7 +877,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                   {String(seconds).padStart(2, "0")}
                 </div>
 
-                {/* Flame progress */}
+                {/* PROGRESS */}
 
                 <div className="mt-6 flex flex-col items-center">
                   <div className="flex items-center gap-3">
@@ -728,12 +924,12 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                   </p>
                 </div>
 
-                {/* Controls */}
+                {/* CONTROLS */}
 
                 <div className="mt-7 flex w-full max-w-[370px] gap-3">
                   <button
                     type="button"
-                    onClick={() => setIsRunning((previous) => !previous)}
+                    onClick={handleToggleTimer}
                     className={`flex h-14 flex-1 items-center justify-center gap-2 rounded-[20px] text-sm font-bold transition-all active:scale-[0.98] ${
                       isRunning
                         ? "bg-[#F47B5D] text-white shadow-[0_12px_30px_rgba(244,123,93,0.2)] hover:bg-[#ed6d4f]"
@@ -769,12 +965,10 @@ const Dashboard = ({ isInstalled, onInstall }) => {
               </div>
             </div>
 
-            {/* =================================================
-                SIDE BENTO
-            ================================================== */}
+            {/* SIDE BENTO */}
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
-              {/* Focus */}
+              {/* FOCUS */}
 
               <div
                 className={`relative min-h-[190px] overflow-hidden rounded-[28px] border p-5 ${softCard}`}
@@ -827,7 +1021,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                 </div>
               </div>
 
-              {/* Break */}
+              {/* BREAK */}
 
               <div
                 className={`relative min-h-[190px] overflow-hidden rounded-[28px] border p-5 ${softCard}`}
@@ -881,7 +1075,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
                 </div>
               </div>
 
-              {/* Status */}
+              {/* SESSION STATUS */}
 
               <div
                 className={`col-span-2 rounded-[28px] border p-5 lg:col-span-1 ${softCard}`}
@@ -955,9 +1149,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
             </div>
           </div>
 
-          {/* ===================================================
-              SESSION INFO
-          ==================================================== */}
+          {/* SESSION INFO */}
 
           <div
             className={`mt-4 overflow-hidden rounded-[28px] border ${softCard}`}
@@ -1008,174 +1200,12 @@ const Dashboard = ({ isInstalled, onInstall }) => {
               </div>
             </div>
           </div>
-
-          {/* ===================================================
-              TIMER DURATION
-          ==================================================== */}
-
-          <div className={`mt-4 rounded-[28px] border p-5 sm:p-7 ${softCard}`}>
-            <div className="mb-7 flex items-start justify-between gap-4">
-              <div>
-                <p className={`text-sm font-bold ${primaryText}`}>
-                  Timer duration
-                </p>
-
-                <p className={`mt-1 text-xs leading-5 ${mutedText}`}>
-                  Adjust how long each focus and break session lasts.
-                </p>
-              </div>
-
-              <div
-                className={`hidden rounded-2xl px-3 py-2 text-[10px] font-semibold sm:block ${
-                  isDark
-                    ? "bg-white/[0.04] text-zinc-400"
-                    : "bg-[#F4F6F3] text-zinc-500"
-                }`}
-              >
-                {isRunning ? "Pause timer to edit" : "Ready to edit"}
-              </div>
-            </div>
-
-            <div className="grid gap-7 md:grid-cols-2">
-              {/* Focus */}
-
-              <div
-                className={`rounded-[24px] border p-5 ${
-                  isDark
-                    ? "border-white/[0.05] bg-white/[0.02]"
-                    : "border-black/[0.05] bg-[#F8FAF7]"
-                }`}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <label className={`text-xs font-bold ${secondaryText}`}>
-                    Focus
-                  </label>
-
-                  <span
-                    className={`rounded-xl px-2.5 py-1 text-xs font-bold ${
-                      isDark
-                        ? "bg-orange-500/10 text-orange-400"
-                        : "bg-[#FCE2D8] text-orange-600"
-                    }`}
-                  >
-                    {focusMinutes} min
-                  </span>
-                </div>
-
-                <input
-                  type="range"
-                  min="1"
-                  max="180"
-                  step="1"
-                  value={focusMinutes}
-                  disabled={isRunning}
-                  onChange={(e) => handleFocusMinutesChange(e.target.value)}
-                  className={`h-2 w-full cursor-pointer appearance-none rounded-full accent-orange-500 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    isDark ? "bg-white/[0.08]" : "bg-black/[0.08]"
-                  }`}
-                />
-
-                <div
-                  className={`mt-2 flex justify-between text-[9px] font-medium ${mutedText}`}
-                >
-                  <span>1 min</span>
-                  <span>90 min</span>
-                  <span>180 min</span>
-                </div>
-              </div>
-
-              {/* Break */}
-
-              <div
-                className={`rounded-[24px] border p-5 ${
-                  isDark
-                    ? "border-white/[0.05] bg-white/[0.02]"
-                    : "border-black/[0.05] bg-[#F6FAFC]"
-                }`}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <label className={`text-xs font-bold ${secondaryText}`}>
-                    Break
-                  </label>
-
-                  <span
-                    className={`rounded-xl px-2.5 py-1 text-xs font-bold ${
-                      isDark
-                        ? "bg-sky-500/10 text-sky-400"
-                        : "bg-[#E0F1FA] text-sky-600"
-                    }`}
-                  >
-                    {breakMinutes} min
-                  </span>
-                </div>
-
-                <input
-                  type="range"
-                  min="1"
-                  max="60"
-                  step="1"
-                  value={breakMinutes}
-                  disabled={isRunning}
-                  onChange={(e) => handleBreakMinutesChange(e.target.value)}
-                  className={`h-2 w-full cursor-pointer appearance-none rounded-full accent-sky-500 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    isDark ? "bg-white/[0.08]" : "bg-black/[0.08]"
-                  }`}
-                />
-
-                <div
-                  className={`mt-2 flex justify-between text-[9px] font-medium ${mutedText}`}
-                >
-                  <span>1 min</span>
-                  <span>30 min</span>
-                  <span>60 min</span>
-                </div>
-              </div>
-            </div>
-
-            <p className={`mt-6 text-[10px] leading-5 ${mutedText}`}>
-              Focus sessions can be set from 1–180 minutes. Breaks can be set
-              from 1–60 minutes.
-            </p>
-          </div>
-
-          {/* ===================================================
-              SETTINGS
-          ==================================================== */}
-
-          <div
-            className={`mt-4 flex flex-col gap-4 rounded-[28px] border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 ${softCard}`}
-          >
-            <div>
-              <p className={`text-sm font-bold ${primaryText}`}>
-                Timer settings
-              </p>
-
-              <p className={`mt-1 text-xs ${mutedText}`}>
-                Adjust your timer and appearance settings.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowSettings(true)}
-              className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-bold transition-all active:scale-[0.98] ${borderClass} ${
-                isDark
-                  ? "bg-white/[0.035] text-zinc-300 hover:bg-white/[0.07] hover:text-white"
-                  : "bg-white text-zinc-700 shadow-sm hover:text-black"
-              }`}
-            >
-              <Settings size={14} />
-              Settings
-            </button>
-          </div>
         </section>
       </main>
 
       <BottomNavbar />
 
-      {/* ==========================================================
-          SETTINGS MODAL
-      =========================================================== */}
+      {/* SETTINGS MODAL */}
 
       <SettingsModal
         isOpen={showSettings}

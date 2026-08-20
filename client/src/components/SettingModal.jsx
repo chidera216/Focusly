@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { X, Minus, Plus, Moon, Sun } from "lucide-react";
 
 const SettingsModal = ({
@@ -11,8 +11,39 @@ const SettingsModal = ({
   theme,
   setTheme,
 }) => {
-  const [draftFocus, setDraftFocus] = useState(focusMinutes);
-  const [draftBreak, setDraftBreak] = useState(breakMinutes);
+  // Keep the modal synchronized with whatever the Dashboard currently has.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Force a fresh read when the modal opens.
+    const savedFocus = Number(localStorage.getItem("focusMinutes"));
+    const savedBreak = Number(localStorage.getItem("breakMinutes"));
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedFocus > 0 && savedFocus !== focusMinutes) {
+      setFocusMinutes(savedFocus);
+    }
+
+    if (savedBreak > 0 && savedBreak !== breakMinutes) {
+      setBreakMinutes(savedBreak);
+    }
+
+    if (
+      savedTheme &&
+      (savedTheme === "dark" || savedTheme === "light") &&
+      savedTheme !== theme
+    ) {
+      setTheme(savedTheme);
+    }
+  }, [
+    isOpen,
+    focusMinutes,
+    breakMinutes,
+    theme,
+    setFocusMinutes,
+    setBreakMinutes,
+    setTheme,
+  ]);
 
   if (!isOpen) return null;
 
@@ -21,43 +52,75 @@ const SettingsModal = ({
   const updateFocus = (value) => {
     const minutes = Number(value);
 
-    setDraftFocus(minutes);
-    setFocusMinutes(minutes);
+    if (!Number.isFinite(minutes)) return;
 
-    localStorage.setItem("focusMinutes", minutes);
-    window.dispatchEvent(new Event("timerSettingsChanged"));
+    const safeMinutes = Math.min(180, Math.max(1, minutes));
+
+    // Update Dashboard immediately.
+    setFocusMinutes(safeMinutes);
+
+    // Persist locally.
+    localStorage.setItem("focusMinutes", String(safeMinutes));
+
+    // Tell Dashboard and any other component.
+    window.dispatchEvent(
+      new CustomEvent("timerSettingsChanged", {
+        detail: {
+          focusMinutes: safeMinutes,
+          breakMinutes,
+        },
+      }),
+    );
   };
 
   const updateBreak = (value) => {
     const minutes = Number(value);
 
-    setDraftBreak(minutes);
-    setBreakMinutes(minutes);
+    if (!Number.isFinite(minutes)) return;
 
-    localStorage.setItem("breakMinutes", minutes);
-    window.dispatchEvent(new Event("timerSettingsChanged"));
+    const safeMinutes = Math.min(60, Math.max(1, minutes));
+
+    // Update Dashboard immediately.
+    setBreakMinutes(safeMinutes);
+
+    // Persist locally.
+    localStorage.setItem("breakMinutes", String(safeMinutes));
+
+    // Tell Dashboard and any other component.
+    window.dispatchEvent(
+      new CustomEvent("timerSettingsChanged", {
+        detail: {
+          focusMinutes,
+          breakMinutes: safeMinutes,
+        },
+      }),
+    );
   };
 
   const changeFocus = (amount) => {
-    const next = Math.min(180, Math.max(1, draftFocus + amount));
-    updateFocus(next);
+    updateFocus(focusMinutes + amount);
   };
 
   const changeBreak = (amount) => {
-    const next = Math.min(60, Math.max(1, draftBreak + amount));
-    updateBreak(next);
+    updateBreak(breakMinutes + amount);
   };
 
   const handleThemeChange = (value) => {
+    if (value !== "dark" && value !== "light") return;
+
     setTheme(value);
     localStorage.setItem("theme", value);
 
-    window.dispatchEvent(new Event("themeChanged"));
+    window.dispatchEvent(
+      new CustomEvent("themeChanged", {
+        detail: {
+          theme: value,
+        },
+      }),
+    );
   };
 
   const handleClose = () => {
-    setDraftFocus(focusMinutes);
-    setDraftBreak(breakMinutes);
     onClose();
   };
 
@@ -78,52 +141,79 @@ const SettingsModal = ({
 
   const colors = {
     overlay: "bg-black/60",
+
     modal: isDark
       ? "border-white/[0.07] bg-[#19191C]"
-      : "border-black/[0.06] bg-[#FFFFFF]",
+      : "border-black/[0.06] bg-white",
+
     card: isDark
       ? "border-white/[0.06] bg-white/[0.025]"
       : "border-black/[0.05] bg-[#F8FAF7]",
+
     text: isDark ? "text-white" : "text-[#171918]",
+
     secondary: isDark ? "text-zinc-400" : "text-zinc-600",
-    muted: isDark ? "text-zinc-500" : "text-zinc-500",
+
+    muted: "text-zinc-500",
+
     border: isDark ? "border-white/[0.07]" : "border-black/[0.06]",
+
     button: isDark
       ? "border-white/[0.07] bg-white/[0.035] text-zinc-400 hover:bg-white/[0.07] hover:text-white"
       : "border-black/[0.06] bg-[#FAF9F6] text-zinc-500 hover:bg-white hover:text-black",
   };
 
+  const presets = [
+    {
+      focus: 15,
+      break: 5,
+      label: "15 / 5",
+    },
+    {
+      focus: 25,
+      break: 5,
+      label: "25 / 5",
+    },
+    {
+      focus: 45,
+      break: 10,
+      label: "45 / 10",
+    },
+    {
+      focus: 60,
+      break: 10,
+      label: "60 / 10",
+    },
+  ];
+
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-md transition-colors duration-300 ${colors.overlay}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-md ${colors.overlay}`}
     >
       <div
-        className={`flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-[32px] border shadow-[0_30px_100px_rgba(0,0,0,0.3)] ${colors.modal}`}
+        className={`flex max-h-[90vh] w-full max-w-[400px] flex-col overflow-hidden rounded-[32px] border shadow-[0_30px_100px_rgba(0,0,0,0.3)] ${colors.modal}`}
       >
         {/* Header */}
-
         <div
           className={`shrink-0 border-b px-5 py-5 sm:px-7 sm:py-6 ${colors.border}`}
         >
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <p
-                  className={`text-[9px] font-bold uppercase tracking-[0.18em] ${colors.muted}`}
-                >
-                  Focusly
-                </p>
+            <div>
+              <p
+                className={`text-[9px] font-bold uppercase tracking-[0.18em] ${colors.muted}`}
+              >
+                Focusly
+              </p>
 
-                <h2
-                  className={`mt-1 text-xl font-bold tracking-[-0.04em] ${colors.text}`}
-                >
-                  Timer settings
-                </h2>
+              <h2
+                className={`mt-1 text-xl font-bold tracking-[-0.04em] ${colors.text}`}
+              >
+                Timer settings
+              </h2>
 
-                <p className={`mt-1 text-xs ${colors.muted}`}>
-                  Make the timer fit the way you work.
-                </p>
-              </div>
+              <p className={`mt-1 text-xs ${colors.muted}`}>
+                Make the timer fit the way you work.
+              </p>
             </div>
 
             <button
@@ -138,11 +228,9 @@ const SettingsModal = ({
         </div>
 
         {/* Content */}
-
         <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-7">
           <div className="space-y-4">
             {/* Appearance */}
-
             <section className={`rounded-[28px] border p-5 ${colors.card}`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
@@ -200,7 +288,6 @@ const SettingsModal = ({
             </section>
 
             {/* Focus Duration */}
-
             <section className={`rounded-[28px] border p-5 ${colors.card}`}>
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
@@ -214,9 +301,9 @@ const SettingsModal = ({
                 </div>
 
                 <span
-                  className={`font-num whitespace-nowrap text-lg font-semibold ${colors.text}`}
+                  className={`whitespace-nowrap text-lg font-semibold ${colors.text}`}
                 >
-                  {formatMinutes(draftFocus)}
+                  {formatMinutes(focusMinutes)}
                 </span>
               </div>
 
@@ -229,7 +316,7 @@ const SettingsModal = ({
                   <button
                     type="button"
                     onClick={() => changeFocus(-1)}
-                    disabled={draftFocus <= 1}
+                    disabled={focusMinutes <= 1}
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Minus size={16} />
@@ -237,9 +324,9 @@ const SettingsModal = ({
 
                   <div className="text-center">
                     <p
-                      className={`font-num text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
+                      className={`text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
                     >
-                      {draftFocus}
+                      {focusMinutes}
                     </p>
 
                     <p
@@ -252,7 +339,7 @@ const SettingsModal = ({
                   <button
                     type="button"
                     onClick={() => changeFocus(1)}
-                    disabled={draftFocus >= 180}
+                    disabled={focusMinutes >= 180}
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Plus size={16} />
@@ -264,7 +351,7 @@ const SettingsModal = ({
                   min="1"
                   max="180"
                   step="1"
-                  value={draftFocus}
+                  value={focusMinutes}
                   onChange={(e) => updateFocus(e.target.value)}
                   className="h-2 w-full cursor-pointer appearance-none rounded-full accent-orange-500"
                 />
@@ -279,7 +366,6 @@ const SettingsModal = ({
             </section>
 
             {/* Break Duration */}
-
             <section className={`rounded-[28px] border p-5 ${colors.card}`}>
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
@@ -293,9 +379,9 @@ const SettingsModal = ({
                 </div>
 
                 <span
-                  className={`font-num whitespace-nowrap text-lg font-semibold ${colors.text}`}
+                  className={`whitespace-nowrap text-lg font-semibold ${colors.text}`}
                 >
-                  {formatMinutes(draftBreak)}
+                  {formatMinutes(breakMinutes)}
                 </span>
               </div>
 
@@ -308,7 +394,7 @@ const SettingsModal = ({
                   <button
                     type="button"
                     onClick={() => changeBreak(-1)}
-                    disabled={draftBreak <= 1}
+                    disabled={breakMinutes <= 1}
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Minus size={16} />
@@ -316,9 +402,9 @@ const SettingsModal = ({
 
                   <div className="text-center">
                     <p
-                      className={`font-num text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
+                      className={`text-4xl font-semibold tracking-[-0.06em] ${colors.text}`}
                     >
-                      {draftBreak}
+                      {breakMinutes}
                     </p>
 
                     <p
@@ -331,7 +417,7 @@ const SettingsModal = ({
                   <button
                     type="button"
                     onClick={() => changeBreak(1)}
-                    disabled={draftBreak >= 60}
+                    disabled={breakMinutes >= 60}
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${colors.border} ${colors.button}`}
                   >
                     <Plus size={16} />
@@ -343,7 +429,7 @@ const SettingsModal = ({
                   min="1"
                   max="60"
                   step="1"
-                  value={draftBreak}
+                  value={breakMinutes}
                   onChange={(e) => updateBreak(e.target.value)}
                   className="h-2 w-full cursor-pointer appearance-none rounded-full accent-sky-500"
                 />
@@ -358,7 +444,6 @@ const SettingsModal = ({
             </section>
 
             {/* Quick Presets */}
-
             <section className={`rounded-[28px] border p-5 ${colors.card}`}>
               <div className="mb-4">
                 <p className={`text-sm font-bold ${colors.text}`}>
@@ -371,14 +456,10 @@ const SettingsModal = ({
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[
-                  { focus: 15, break: 5, label: "15 / 5" },
-                  { focus: 25, break: 5, label: "25 / 5" },
-                  { focus: 45, break: 10, label: "45 / 10" },
-                  { focus: 60, break: 10, label: "60 / 10" },
-                ].map((preset) => {
+                {presets.map((preset) => {
                   const active =
-                    draftFocus === preset.focus && draftBreak === preset.break;
+                    focusMinutes === preset.focus &&
+                    breakMinutes === preset.break;
 
                   return (
                     <button
@@ -400,9 +481,7 @@ const SettingsModal = ({
                             }`
                       }`}
                     >
-                      <span className="font-num">{preset.focus}</span>
-                      <span className={colors.muted}> / </span>
-                      <span className="font-num">{preset.break}</span>
+                      {preset.focus} / {preset.break}
                     </button>
                   );
                 })}
@@ -412,7 +491,6 @@ const SettingsModal = ({
         </div>
 
         {/* Footer */}
-
         <div className={`shrink-0 border-t px-5 py-5 sm:px-7 ${colors.border}`}>
           <button
             type="button"

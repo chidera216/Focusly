@@ -83,15 +83,17 @@ const Tasks = () => {
   const handleCreateTask = async (e) => {
     e.preventDefault();
 
-    if (!title.trim()) return;
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) return;
 
     try {
-      await api.post("/tasks", {
-        title: title.trim(),
+      const res = await api.post("/tasks", {
+        title: trimmedTitle,
       });
 
+      setTasks((currentTasks) => [res.data.task, ...currentTasks]);
       setTitle("");
-      loadTasks();
     } catch (error) {
       console.log("Error creating task:", error);
     }
@@ -104,11 +106,22 @@ const Tasks = () => {
    */
 
   const handleToggleTask = async (taskId) => {
+    // Save the current state in case the API fails
+    const previousTasks = tasks;
+
+    // Update UI immediately
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === taskId ? { ...task, completed: !task.completed } : task,
+      ),
+    );
+
     try {
       await api.patch(`/tasks/${taskId}/toggle`);
-
-      loadTasks();
     } catch (error) {
+      // Roll back if request fails
+      setTasks(previousTasks);
+
       console.log("Error updating task:", error);
     }
   };
@@ -385,7 +398,7 @@ const Tasks = () => {
               </p>
 
               <p
-                className={`mt-1 font-num text-3xl font-bold tracking-[-0.06em] ${primaryText}`}
+                className={`mt-1 text-3xl font-bold tracking-[-0.06em] ${primaryText}`}
               >
                 {activeTasks}
               </p>
@@ -415,7 +428,7 @@ const Tasks = () => {
                   <Check size={19} strokeWidth={2.5} />
                 </div>
 
-                <span className={`font-num text-xs font-bold ${secondaryText}`}>
+                <span className={` text-xs font-bold ${secondaryText}`}>
                   {completionPercentage}%
                 </span>
               </div>
@@ -427,7 +440,7 @@ const Tasks = () => {
               </p>
 
               <p
-                className={`mt-1 font-num text-3xl font-bold tracking-[-0.06em] ${primaryText}`}
+                className={`mt-1 text-3xl font-bold tracking-[-0.06em] ${primaryText}`}
               >
                 {completedTasks}
               </p>
