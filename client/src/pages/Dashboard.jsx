@@ -503,7 +503,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
           }`}
         >
           <div className="mx-auto flex h-[76px] w-full max-w-6xl items-center justify-between px-4 sm:px-7 md:px-10">
-            <div className=" pt-6">
+            <div>
               <NavLink
                 to="/dashboard"
                 className="group flex items-center gap-3 rounded-2xl px-2 py-2"
