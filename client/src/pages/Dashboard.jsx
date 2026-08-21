@@ -498,7 +498,7 @@ const Dashboard = ({ isInstalled, onInstall }) => {
         ====================================================== */}
 
         <header
-          className={`sticky top-0 z-30 border-b backdrop-blur-xl ${borderClass} ${
+          className={`sticky top-0 z-30 backdrop-blur-xl ${borderClass} ${
             isDark ? "bg-[#121214]/90" : "bg-[#F4F6F3]/90"
           }`}
         >
