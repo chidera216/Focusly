@@ -16,7 +16,6 @@ const Stats = () => {
   const [range, setRange] = useState("week");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "dark",
   );
@@ -25,9 +24,9 @@ const Stats = () => {
 
   const ranges = [
     { label: "Today", value: "today" },
-    { label: "This week", value: "week" },
-    { label: "This month", value: "month" },
-    { label: "This year", value: "year" },
+    { label: " week", value: "week" },
+    { label: " month", value: "month" },
+    { label: "year", value: "year" },
   ];
 
   // ============================================================
@@ -141,13 +140,8 @@ const Stats = () => {
 
   const averageTaskMinutes = taskCount > 0 ? totalMinutes / taskCount : 0;
 
-  const topTaskPercentage =
-    totalMinutes > 0 && topTask
-      ? Math.min(100, (topTask.totalMinutes / totalMinutes) * 100)
-      : 0;
-
   // ============================================================
-  // THEME
+  // COLORS
   // ============================================================
 
   const pageClass = isDark
@@ -165,7 +159,9 @@ const Stats = () => {
   const darkYellow = "bg-[#242118]";
 
   const primaryText = isDark ? "text-white" : "text-[#171817]";
+
   const secondaryText = isDark ? "text-zinc-300" : "text-[#555A55]";
+
   const mutedText = isDark ? "text-zinc-500" : "text-[#747A74]";
 
   // ============================================================
@@ -220,6 +216,7 @@ const Stats = () => {
           {/* ==================================================
               RANGE SWITCHER
           ================================================== */}
+
           <div
             className={`mb-6 flex w-full flex-wrap items-center gap-1.5 rounded-[22px] border p-1.5 sm:w-fit ${cardBase} ${
               isDark ? "bg-[#19191C]" : "bg-white"
@@ -269,7 +266,7 @@ const Stats = () => {
           ) : stats ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
               {/* ==================================================
-                  WELCOME / DAILY PROGRESS
+                  FOCUS OVERVIEW
               ================================================== */}
 
               <div
@@ -318,7 +315,7 @@ const Stats = () => {
                         Total focus
                       </span>
 
-                      <span className={` text-xs font-semibold ${primaryText}`}>
+                      <span className={`text-xs font-semibold ${primaryText}`}>
                         {formatLargeTime(totalMinutes)}
                       </span>
                     </div>
@@ -333,7 +330,7 @@ const Stats = () => {
                           isDark ? "bg-[#9FE3C4]" : "bg-[#4E9B78]"
                         }`}
                         style={{
-                          width: `${Math.min(100, topTaskPercentage || 5)}%`,
+                          width: totalMinutes > 0 ? "100%" : "0%",
                         }}
                       />
                     </div>
@@ -425,7 +422,7 @@ const Stats = () => {
                     </div>
 
                     <span
-                      className={`font-num text-2xl font-bold ${
+                      className={`text-2xl font-bold ${
                         isDark ? "text-[#FF9CA5]" : "text-[#B94E5A]"
                       }`}
                     >
@@ -653,7 +650,7 @@ const Stats = () => {
 
               <div
                 className={`relative min-h-[280px] overflow-hidden p-6 sm:p-7 lg:col-span-4 ${cardClass(
-                  isDark ? "#201C18" : "bg-[#F5E0B8]",
+                  isDark ? "bg-[#201C18]" : "bg-[#F5E0B8]",
                 )}`}
               >
                 <div className="relative z-10 flex h-full flex-col justify-between">

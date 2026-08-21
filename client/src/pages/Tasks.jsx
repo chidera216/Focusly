@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Circle, Clock3, Plus, Trash2, Play, X } from "lucide-react";
+
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import { useNavigate } from "react-router-dom";
@@ -10,20 +11,16 @@ const Tasks = () => {
   const [title, setTitle] = useState("");
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "dark",
   );
 
   const navigate = useNavigate();
-
   const isDark = theme === "dark";
 
-  /*
-   * ============================================================
-   * THEME
-   * ============================================================
-   */
+  // ============================================================
+  // THEME
+  // ============================================================
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -37,11 +34,9 @@ const Tasks = () => {
     };
   }, []);
 
-  /*
-   * ============================================================
-   * LOAD TASKS
-   * ============================================================
-   */
+  // ============================================================
+  // LOAD TASKS
+  // ============================================================
 
   const loadTasks = async () => {
     try {
@@ -74,11 +69,9 @@ const Tasks = () => {
     };
   }, []);
 
-  /*
-   * ============================================================
-   * CREATE TASK
-   * ============================================================
-   */
+  // ============================================================
+  // CREATE TASK
+  // ============================================================
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
@@ -99,38 +92,35 @@ const Tasks = () => {
     }
   };
 
-  /*
-   * ============================================================
-   * TOGGLE TASK
-   * ============================================================
-   */
+  // ============================================================
+  // TOGGLE TASK
+  // ============================================================
 
   const handleToggleTask = async (taskId) => {
-    // Save the current state in case the API fails
     const previousTasks = tasks;
 
-    // Update UI immediately
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
-        task._id === taskId ? { ...task, completed: !task.completed } : task,
+        task._id === taskId
+          ? {
+              ...task,
+              completed: !task.completed,
+            }
+          : task,
       ),
     );
 
     try {
       await api.patch(`/tasks/${taskId}/toggle`);
     } catch (error) {
-      // Roll back if request fails
       setTasks(previousTasks);
-
       console.log("Error updating task:", error);
     }
   };
 
-  /*
-   * ============================================================
-   * DELETE TASK
-   * ============================================================
-   */
+  // ============================================================
+  // DELETE TASK
+  // ============================================================
 
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
@@ -148,7 +138,6 @@ const Tasks = () => {
 
           if (selectedTask._id === taskToDelete._id) {
             localStorage.removeItem("selectedTask");
-
             window.dispatchEvent(new Event("selectedTaskChanged"));
           }
         } catch {
@@ -166,56 +155,51 @@ const Tasks = () => {
     }
   };
 
-  /*
-   * ============================================================
-   * FOCUS TASK
-   * ============================================================
-   */
+  // ============================================================
+  // FOCUS TASK
+  // ============================================================
 
   const handleFocusTask = (task) => {
     localStorage.setItem("selectedTask", JSON.stringify(task));
-
     window.dispatchEvent(new Event("selectedTaskChanged"));
-
     navigate("/dashboard");
   };
 
-  /*
-   * ============================================================
-   * TASK COUNTS
-   * ============================================================
-   */
+  // ============================================================
+  // TASK COUNTS
+  // ============================================================
 
   const completedTasks = tasks.filter((task) => task.completed).length;
-
   const activeTasks = tasks.filter((task) => !task.completed).length;
 
   const completionPercentage =
     tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
-  /*
-   * ============================================================
-   * COLORS
-   * ============================================================
-   */
+  // ============================================================
+  // COLORS / VISUAL SYSTEM
+  // ============================================================
 
   const pageClass = isDark
-    ? "bg-[#121214] text-white"
-    : "bg-[#F4F6F3] text-[#171717]";
+    ? "bg-[#101113] text-white"
+    : "bg-[#F5F6F4] text-[#161816]";
 
-  const primaryText = isDark ? "text-white" : "text-[#171717]";
+  const primaryText = isDark ? "text-[#F7F7F5]" : "text-[#171917]";
 
-  const secondaryText = isDark ? "text-zinc-400" : "text-[#5D625C]";
+  const secondaryText = isDark ? "text-[#A1A3A1]" : "text-[#626761]";
 
-  const mutedText = isDark ? "text-zinc-600" : "text-[#858B82]";
+  const mutedText = isDark ? "text-[#6F736F]" : "text-[#8A9089]";
 
-  // const borderClass = isDark ? "border-white/[0.08]" : "border-black/[0.07]";
+  const surface = isDark
+    ? "border-white/[0.085] bg-[#18191B]"
+    : "border-black/[0.075] bg-white";
 
-  /*
-   * ============================================================
-   * RENDER
-   * ============================================================
-   */
+  const subtleSurface = isDark
+    ? "border-white/[0.065] bg-[#151618]"
+    : "border-black/[0.06] bg-[#FAFAF8]";
+
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
     <div
@@ -228,15 +212,15 @@ const Tasks = () => {
             HEADER
         ====================================================== */}
 
-        <header className="px-5 pb-6 pt-7 sm:px-8 sm:pt-9 md:px-10">
+        <header className="px-5 pb-7 pt-7 sm:px-8 sm:pt-9 md:px-10">
           <div className="mx-auto max-w-6xl">
             <div className="flex items-end justify-between gap-5">
               <div>
                 <div
                   className={`mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                     isDark
-                      ? "border-white/10 bg-white/[0.035] text-zinc-400"
-                      : "border-black/[0.07] bg-white text-zinc-500 shadow-sm"
+                      ? "border-white/[0.09] bg-white/[0.025] text-zinc-400"
+                      : "border-black/[0.07] bg-white text-zinc-500"
                   }`}
                 >
                   Workspace
@@ -258,11 +242,7 @@ const Tasks = () => {
               {/* TASK COUNT */}
 
               <div
-                className={`hidden rounded-[24px] border px-5 py-4 text-right sm:block ${
-                  isDark
-                    ? "border-white/10 bg-[#1A1A1D]"
-                    : "border-black/[0.07] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
-                }`}
+                className={`hidden min-w-[100px] rounded-[22px] border px-5 py-4 text-right sm:block ${subtleSurface}`}
               >
                 <p
                   className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${mutedText}`}
@@ -286,27 +266,29 @@ const Tasks = () => {
 
         <section className="mx-auto w-full max-w-6xl px-5 pb-28 sm:px-8 md:px-10">
           {/* ====================================================
-              BENTO TOP ROW
+              TOP ROW
           ==================================================== */}
 
           <div className="grid gap-4 md:grid-cols-[1.65fr_0.8fr_0.8fr]">
-            {/* ADD TASK */}
+            {/* ==================================================
+                ADD TASK
+            ================================================== */}
 
             <form
               onSubmit={handleCreateTask}
-              className={`relative overflow-hidden rounded-[30px] border p-5 sm:p-6 ${
+              className={`relative overflow-hidden rounded-[28px] border p-5 sm:p-6 ${
                 isDark
-                  ? "border-white/[0.08] bg-[#1A1A1D]"
-                  : "border-black/[0.07] bg-[#DDF4E7] shadow-[0_14px_40px_rgba(0,0,0,0.05)]"
+                  ? "border-white/[0.09] bg-[#1B1C1F]"
+                  : "border-black/[0.075] bg-white shadow-[0_12px_35px_rgba(0,0,0,0.035)]"
               }`}
             >
               <div className="relative z-10">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                       isDark
-                        ? "bg-[#242428] text-[#A8E6CF]"
-                        : "bg-[#BDE9D0] text-[#245B42]"
+                        ? "bg-[#25272A] text-[#A8E6CF]"
+                        : "bg-[#E5F5EB] text-[#327A55]"
                     }`}
                   >
                     <Plus size={18} strokeWidth={2.5} />
@@ -331,8 +313,8 @@ const Tasks = () => {
                     placeholder="What do you want to focus on?"
                     className={`min-w-0 flex-1 rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all ${
                       isDark
-                        ? "border-white/10 bg-[#121214] text-white placeholder:text-zinc-600 focus:border-white/20"
-                        : "border-black/[0.07] bg-white text-[#171717] placeholder:text-zinc-400 focus:border-black/15"
+                        ? "border-white/[0.09] bg-[#111214] text-white placeholder:text-zinc-600 focus:border-white/[0.2] focus:bg-[#0F1012]"
+                        : "border-black/[0.08] bg-[#F8F9F7] text-[#171717] placeholder:text-zinc-400 focus:border-black/[0.16] focus:bg-white"
                     }`}
                   />
 
@@ -341,8 +323,8 @@ const Tasks = () => {
                     disabled={!title.trim()}
                     className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 ${
                       isDark
-                        ? "bg-[#F7F7F5] text-black hover:bg-white"
-                        : "bg-[#171717] text-white hover:bg-black"
+                        ? "bg-[#F5F5F2] text-[#111] hover:bg-white"
+                        : "bg-[#171917] text-white hover:bg-black"
                     }`}
                   >
                     <Plus size={16} strokeWidth={2.5} />
@@ -351,30 +333,24 @@ const Tasks = () => {
                 </div>
               </div>
 
-              {/* DECORATION */}
-
               <div
                 className={`pointer-events-none absolute -bottom-12 -right-12 h-32 w-32 rounded-full ${
-                  isDark ? "bg-[#A8E6CF]/5" : "bg-[#A8E6CF]/40"
+                  isDark ? "bg-[#A8E6CF]/[0.035]" : "bg-[#A8E6CF]/20"
                 }`}
               />
             </form>
 
-            {/* ACTIVE */}
+            {/* ==================================================
+                ACTIVE
+            ================================================== */}
 
-            <div
-              className={`rounded-[30px] border p-5 sm:p-6 ${
-                isDark
-                  ? "border-white/[0.08] bg-[#19191C]"
-                  : "border-black/[0.07] bg-[#CFE9FA] shadow-[0_14px_40px_rgba(0,0,0,0.04)]"
-              }`}
-            >
+            <div className={`rounded-[28px] border p-5 sm:p-6 ${surface}`}>
               <div className="flex items-start justify-between">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                     isDark
-                      ? "bg-[#242428] text-[#8FD3FF]"
-                      : "bg-[#B7DDF5] text-[#275C78]"
+                      ? "bg-[#20272A] text-[#8FD3FF]"
+                      : "bg-[#EAF5FA] text-[#34799D]"
                   }`}
                 >
                   <Clock3 size={19} />
@@ -383,8 +359,8 @@ const Tasks = () => {
                 <span
                   className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${
                     isDark
-                      ? "bg-white/5 text-zinc-500"
-                      : "bg-white/50 text-[#537083]"
+                      ? "bg-white/[0.045] text-zinc-500"
+                      : "bg-[#F2F4F1] text-[#667068]"
                   }`}
                 >
                   Active
@@ -408,27 +384,27 @@ const Tasks = () => {
               </p>
             </div>
 
-            {/* COMPLETED */}
+            {/* ==================================================
+                COMPLETED
+            ================================================== */}
 
-            <div
-              className={`rounded-[30px] border p-5 sm:p-6 ${
-                isDark
-                  ? "border-white/[0.08] bg-[#19191C]"
-                  : "border-black/[0.07] bg-[#FFF0B8] shadow-[0_14px_40px_rgba(0,0,0,0.04)]"
-              }`}
-            >
+            <div className={`rounded-[28px] border p-5 sm:p-6 ${surface}`}>
               <div className="flex items-start justify-between">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                     isDark
-                      ? "bg-[#242428] text-[#FFE08A]"
-                      : "bg-[#FFE49A] text-[#80621A]"
+                      ? "bg-[#29261F] text-[#FFE08A]"
+                      : "bg-[#FFF5D0] text-[#8A6A17]"
                   }`}
                 >
                   <Check size={19} strokeWidth={2.5} />
                 </div>
 
-                <span className={` text-xs font-bold ${secondaryText}`}>
+                <span
+                  className={`text-xs font-bold ${
+                    isDark ? "text-[#D7B950]" : "text-[#80621A]"
+                  }`}
+                >
                   {completionPercentage}%
                 </span>
               </div>
@@ -446,13 +422,13 @@ const Tasks = () => {
               </p>
 
               <div
-                className={`mt-3 h-2 overflow-hidden rounded-full ${
+                className={`mt-3 h-1.5 overflow-hidden rounded-full ${
                   isDark ? "bg-white/[0.07]" : "bg-black/[0.07]"
                 }`}
               >
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    isDark ? "bg-[#FFE08A]" : "bg-[#D5A900]"
+                    isDark ? "bg-[#D9BB54]" : "bg-[#D5A900]"
                   }`}
                   style={{
                     width: `${completionPercentage}%`,
@@ -466,7 +442,7 @@ const Tasks = () => {
               TASK SECTION
           ==================================================== */}
 
-          <div className="mt-5">
+          <div className="mt-8">
             <div className="mb-4 flex items-end justify-between">
               <div>
                 <p
@@ -491,18 +467,14 @@ const Tasks = () => {
 
             {tasks.length === 0 ? (
               <div
-                className={`rounded-[30px] border p-8 sm:p-12 ${
-                  isDark
-                    ? "border-white/[0.08] bg-[#19191C]"
-                    : "border-black/[0.07] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.04)]"
-                }`}
+                className={`rounded-[28px] border p-8 sm:p-12 ${subtleSurface}`}
               >
                 <div className="mx-auto max-w-md text-center">
                   <div
                     className={`mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] ${
                       isDark
-                        ? "bg-[#242428] text-zinc-500"
-                        : "bg-[#F2D8D1] text-[#B76D5B]"
+                        ? "bg-[#222428] text-zinc-500"
+                        : "bg-[#F2F3F0] text-[#858B82]"
                     }`}
                   >
                     <Circle size={28} strokeWidth={1.8} />
@@ -524,18 +496,26 @@ const Tasks = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 {tasks.map((task, index) => {
                   const accentStyles = [
-                    isDark
-                      ? "bg-[#1C2421] border-[#A8E6CF]/10"
-                      : "bg-[#E3F5EA] border-[#BDE9D0]",
-                    isDark
-                      ? "bg-[#1C2227] border-[#8FD3FF]/10"
-                      : "bg-[#E2F2FC] border-[#B7DDF5]",
-                    isDark
-                      ? "bg-[#24201B] border-[#FFE08A]/10"
-                      : "bg-[#FFF4C9] border-[#FFE49A]",
-                    isDark
-                      ? "bg-[#241E21] border-[#FFB7A8]/10"
-                      : "bg-[#FDE6E0] border-[#F6C6BC]",
+                    {
+                      light: "border-[#BDE9D0]",
+                      dark: "border-[#A8E6CF]/15",
+                      line: "bg-[#7FC99B]",
+                    },
+                    {
+                      light: "border-[#B7DDF5]",
+                      dark: "border-[#8FD3FF]/15",
+                      line: "bg-[#76B9DD]",
+                    },
+                    {
+                      light: "border-[#FFE49A]",
+                      dark: "border-[#FFE08A]/15",
+                      line: "bg-[#D9BB54]",
+                    },
+                    {
+                      light: "border-[#F6C6BC]",
+                      dark: "border-[#FFB7A8]/15",
+                      line: "bg-[#D98E7B]",
+                    },
                   ];
 
                   const accent = accentStyles[index % accentStyles.length];
@@ -543,12 +523,14 @@ const Tasks = () => {
                   return (
                     <div
                       key={task._id}
-                      className={`group relative overflow-hidden rounded-[30px] border p-5 transition-all duration-200 hover:-translate-y-0.5 sm:p-6 ${
+                      className={`group relative overflow-hidden rounded-[28px] border p-5 transition-all duration-200 hover:-translate-y-0.5 sm:p-6 ${
                         task.completed
                           ? isDark
-                            ? "border-white/[0.05] bg-[#171719] opacity-70"
-                            : "border-black/[0.05] bg-white opacity-70"
-                          : accent
+                            ? "border-white/[0.05] bg-[#151618] opacity-65"
+                            : "border-black/[0.055] bg-[#FAFAF8] opacity-70"
+                          : isDark
+                            ? `bg-[#191A1C] ${accent.dark}`
+                            : `bg-white ${accent.light} shadow-[0_8px_25px_rgba(0,0,0,0.025)]`
                       }`}
                     >
                       <div className="flex items-start gap-4">
@@ -568,8 +550,8 @@ const Tasks = () => {
                                 ? "border-[#A8E6CF] bg-[#A8E6CF] text-[#16221C]"
                                 : "border-[#6BB88C] bg-[#6BB88C] text-white"
                               : isDark
-                                ? "border-white/15 bg-black/10 text-transparent hover:border-white/30"
-                                : "border-black/10 bg-white/50 text-transparent hover:border-black/20"
+                                ? "border-white/[0.15] bg-white/[0.02] text-transparent hover:border-white/[0.3]"
+                                : "border-black/[0.1] bg-black/[0.015] text-transparent hover:border-black/[0.2]"
                           }`}
                         >
                           <Check size={17} strokeWidth={3} />
@@ -619,8 +601,8 @@ const Tasks = () => {
                               disabled={task.completed}
                               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35 ${
                                 isDark
-                                  ? "bg-white text-black hover:bg-zinc-200"
-                                  : "bg-[#171717] text-white hover:bg-black"
+                                  ? "bg-[#F5F5F2] text-black hover:bg-white"
+                                  : "bg-[#171917] text-white hover:bg-black"
                               }`}
                             >
                               <Play
@@ -636,8 +618,8 @@ const Tasks = () => {
                               onClick={() => setTaskToDelete(task)}
                               className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all ${
                                 isDark
-                                  ? "border-white/8 bg-black/10 text-zinc-600 hover:border-red-400/20 hover:bg-red-400/5 hover:text-red-400"
-                                  : "border-black/7 bg-white/40 text-zinc-500 hover:border-red-400/20 hover:bg-red-50 hover:text-red-500"
+                                  ? "border-white/[0.07] bg-white/[0.02] text-zinc-600 hover:border-red-400/20 hover:bg-red-400/5 hover:text-red-400"
+                                  : "border-black/[0.07] bg-black/[0.015] text-zinc-500 hover:border-red-400/20 hover:bg-red-50 hover:text-red-500"
                               }`}
                               aria-label={`Delete ${task.title}`}
                             >
@@ -651,15 +633,7 @@ const Tasks = () => {
 
                       {!task.completed && (
                         <div
-                          className={`absolute bottom-0 left-0 h-1 w-full ${
-                            index % 4 === 0
-                              ? "bg-[#8FD3A8]"
-                              : index % 4 === 1
-                                ? "bg-[#8CC7E8]"
-                                : index % 4 === 2
-                                  ? "bg-[#E7C75E]"
-                                  : "bg-[#E6A08E]"
-                          }`}
+                          className={`absolute bottom-0 left-0 h-[3px] w-full ${accent.line}`}
                         />
                       )}
                     </div>
@@ -678,11 +652,11 @@ const Tasks = () => {
       ======================================================== */}
 
       {taskToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-md">
           <div
             className={`w-full max-w-md rounded-[30px] border p-6 shadow-[0_30px_100px_rgba(0,0,0,0.25)] sm:p-7 ${
               isDark
-                ? "border-white/10 bg-[#19191C]"
+                ? "border-white/[0.1] bg-[#191A1C]"
                 : "border-black/[0.07] bg-[#FAFAF7]"
             }`}
           >
